@@ -6,18 +6,19 @@
 
 int nelem=0,nvert=0,ncide=0;
 
+block blocks[max_block];
+quad elems[max_elem];
+point verts[4*max_elem];
+edge cides[4*max_elem];
+
 int main(int argc, char *argv[]){
 
-  quad elems[max_elem];
-  point verts[4*max_elem];
-  edge cides[4*max_elem];
-
   char fname[64];
+  char bcs[4][4];
 
-  double x[4],y[4],x0[4],y0[4],A,B,C,R,delta,RR;
-  double xc,yc,phi,dphi,theta,psi;
-
-  int i,j,newvert,newelem,newside;
+  point corners[4];
+  point axis;
+  int i,j,k,n;
 
   sprintf(fname,"newmesh.rea");
 
@@ -29,32 +30,61 @@ int main(int argc, char *argv[]){
     }
   }
 
-  R=0.5;
-  delta=0.005;
-  x[2]=0.0; y[2]=0.0;
-  x[0]=R;   y[0]=0.0;
-  x[1]=0.0 ;y[1]=R;
+/*  
+  corners[0].x=0.0;corners[0].y=0.0;
+  corners[1].x=0.8;corners[1].y=-0.1;
+  corners[2].x=1.0;corners[2].y=1.0;
+  corners[3].x=-0.1;corners[3].y=0.86;
+  sprintf(bcs[0],"W  ");
+  sprintf(bcs[1],"O  ");
+  sprintf(bcs[2],"SYM");
+  sprintf(bcs[3],"E  ");
 
-  make_ctri_space(elems,verts,cides,3,8,R,delta,x,y,&newelem,&newvert);
+  make_cquad_space(5,6,-1.1,0.03,-0.04,corners,bcs);
 
-  write_rea(elems,verts,cides,fname);
+  corners[1]=corners[0];
+  corners[2]=corners[3];
+  corners[0].x=-0.8;corners[0].y=0.1;
+  corners[3].x=-0.6;corners[3].y=0.7;
+  sprintf(bcs[1],"E  ");
+  sprintf(bcs[3],"v  ");
+
+  make_cquad_space(5,6,1.1,0.03,0.00,corners,bcs);
+  write_rea(fname);
+ */ 
 
 return 0;
 }
 
-int write_rea(quad *elems,point *verts,edge *cides,char *fname){
+int write_rea(char *fname){
 
-  char line[256];
+  char line[256],bcout[4];
 
   FILE *reain,*reaout;
 
   int i,j,ivert;
+  double dx;
+  double xmin=1.0e30,xmax=-1.0e30,ymin=1.0e30,ymax=-1.0e30;
+
+  for(i=0;i<nvert;i++){
+    xmax=fmax(xmax,(verts+i)->x);
+    xmin=fmin(xmin,(verts+i)->x);
+    ymax=fmax(ymax,(verts+i)->y);
+    ymin=fmin(ymin,(verts+i)->y);
+  }
+
+  dx=fmax((xmax-xmin),(ymax-ymin));
 
   reaout=fopen(fname,"w");
+
+  printf("\n\twriting %d elements to file \"%s\"\n\n",nelem,fname);
 
   reain=fopen("reatop.txt","r");
   while(fgets(line,256,reain)!=NULL) fprintf(reaout,"%s",line);
   fclose(reain);
+
+  fprintf(reaout,"%10.6f%10.6f%10.6f%10.6f\n",1.2*dx,1.2*dx,xmin-0.1*dx,ymin-0.1*dx);
+  fprintf(reaout,"**MESH DATA**\n");
 
   fprintf(reaout,"%5d 2 %5d     NEL, NDIM, NELV\n",nelem,nelem);
   for(i=0;i<nelem;i++){
@@ -86,7 +116,13 @@ int write_rea(quad *elems,point *verts,edge *cides,char *fname){
   }
 
   fprintf(reaout,"  ***** BOUNDARY CONDITIONS *****\n");
-  fprintf(reaout,"  ***** NO FLUID   BOUNDARY CONDITIONS *****\n");
+  fprintf(reaout,"  ***** FLUID   BOUNDARY CONDITIONS *****\n");
+  for(i=0;i<nelem;i++){
+    for(j=0;j<4;j++){
+       strcpy(bcout,(elems+i)->BC[j]);
+       fprintf(reaout," %s%3d  %1d   %6f       %6f       %6f       %6f       %6f\n",bcout,i+1,j+1,0.0,0.0,0.0,0.0,0.0);
+    }
+  }
 
   reain=fopen("reabot.txt","r");
   while(fgets(line,256,reain)!=NULL) fprintf(reaout,"%s",line);
@@ -97,42 +133,38 @@ int write_rea(quad *elems,point *verts,edge *cides,char *fname){
 return 0;
 }
 
-int make_quad_space(quad *elem,point *vert,int nr,int ns,double *x,double *y,int *ielem,int *ivert){
+int make_quad_space(int nr,int ns,point *p,char bcs[4][4]){
 
-  int i,j;
+  int i,j,nvert0=nvert;
   double *r,*s,dr,ds,r0,s0;
-  double tx,ty;
 
   printf("Generating %d elements in a quadrilateral space\n",ns*nr);
 
   r=(double *)malloc(sizeof(double)*2*(ns+1));
   s=(double *)malloc(sizeof(double)*2*(ns+1));
 
-  *ivert=0;
-  *ielem=0;
-
 //      3---s3---2
 //      |        |
-//  j   s4      s2
+// j,s  s4      s2
 //  ᴧ   |        |
 //  |   0---s1---1
 //  |
-//  *---->i
+//  *---->i,r
 
 //side 2 (1-2)
-  dr=(x[2]-x[1])/(double)ns;
-  ds=(y[2]-y[1])/(double)ns;
+  dr=(p[2].x-p[1].x)/(double)ns;
+  ds=(p[2].y-p[1].y)/(double)ns;
   for(j=0;j<=ns;j++){
-    *(r+j)=x[1]+(double)j*dr;
-    *(s+j)=y[1]+(double)j*ds;
+    *(r+j)=p[1].x+(double)j*dr;
+    *(s+j)=p[1].y+(double)j*ds;
   }
 
 //side 4 (0-3)
-  dr=(x[3]-x[0])/(double)ns;
-  ds=(y[3]-y[0])/(double)ns;
+  dr=(p[3].x-p[0].x)/(double)ns;
+  ds=(p[3].y-p[0].y)/(double)ns;
   for(j=0;j<=ns;j++){
-    *(r+j+ns+1)=x[0]+(double)j*dr;
-    *(s+j+ns+1)=y[0]+(double)j*ds;
+    *(r+j+ns+1)=p[0].x+(double)j*dr;
+    *(s+j+ns+1)=p[0].y+(double)j*ds;
   }
 
   for(j=0;j<=ns;j++){
@@ -141,180 +173,345 @@ int make_quad_space(quad *elem,point *vert,int nr,int ns,double *x,double *y,int
     dr=(*(r+j)-r0)/(double)nr;
     ds=(*(s+j)-s0)/(double)nr;
     for(i=0;i<=nr;i++){
-      (vert+i+j*(nr+1))->x=r0+(double)i*dr;
-      (vert+i+j*(nr+1))->y=s0+(double)i*ds;
-      (*ivert)++;
+      (verts+nvert0+i+j*(nr+1))->x=r0+(double)i*dr;
+      (verts+nvert0+i+j*(nr+1))->y=s0+(double)i*ds;
+      nvert++;
     }
   }
 
   for(j=0;j<ns;j++){
     for(i=0;i<nr;i++){
-      (elem+*ielem)->vid[0]=(i+0)+(j+0)*(nr+1)+nvert;
-      (elem+*ielem)->vid[1]=(i+1)+(j+0)*(nr+1)+nvert;
-      (elem+*ielem)->vid[2]=(i+1)+(j+1)*(nr+1)+nvert;
-      (elem+*ielem)->vid[3]=(i+0)+(j+1)*(nr+1)+nvert;
-      (*ielem)++;
+      (elems+nelem)->vid[0]=(i+0)+(j+0)*(nr+1)+nvert0;
+      (elems+nelem)->vid[1]=(i+1)+(j+0)*(nr+1)+nvert0;
+      (elems+nelem)->vid[2]=(i+1)+(j+1)*(nr+1)+nvert0;
+      (elems+nelem)->vid[3]=(i+0)+(j+1)*(nr+1)+nvert0;
+      if(i==0){
+        strcpy((elems+nelem)->BC[3],bcs[3]);
+        sprintf((elems+nelem)->BC[1],"E  ");
+      }else if(i==nr-1){
+        strcpy((elems+nelem)->BC[1],bcs[1]);
+        sprintf((elems+nelem)->BC[3],"E  ");
+      }else{
+        sprintf((elems+nelem)->BC[1],"E  ");
+        sprintf((elems+nelem)->BC[3],"E  ");
+      }
+      if(j==0){
+        strcpy((elems+nelem)->BC[0],bcs[0]);
+        sprintf((elems+nelem)->BC[2],"E  ");
+      }else if(j==ns-1){
+        strcpy((elems+nelem)->BC[2],bcs[2]);
+        sprintf((elems+nelem)->BC[0],"E  ");
+      }else{
+        sprintf((elems+nelem)->BC[0],"E  ");
+        sprintf((elems+nelem)->BC[2],"E  ");
+      }
+      nelem++;
     }
   }
 
   free(r);free(s);
-  nvert+=*ivert;
-  nelem+=*ielem;
   printf("nelem = %d, nvert = %d\n",nelem,nvert);
 
 return 0;
 }
 
-int make_gquad_space(quad *elem,point *vert,int nr,int ns,double dn0,double *x,double *y,int *ielem,int *ivert){
+int make_gquad_space(int nr,int ns,double dn0,point *p,char bcs[4][4]){
 
-  int i,j;
-  double *r,*s,dr,ds,r0,s0,dr0,ds0;
-  double tx,ty,delta,ratio;
+  int i,j,nvert0=nvert;
+  double dr,ds;
+  connector r2,r4;
 
   printf("Generating %d elements in a quadrilateral space with geometric growth\n",ns*nr);
 
-  r=(double *)malloc(sizeof(double)*2*(ns+1));
-  s=(double *)malloc(sizeof(double)*2*(ns+1));
-
-  *ivert=0;
-  *ielem=0;
+  r2.n=ns+1;
+  r2.p=(point *)malloc(sizeof(point)*r2.n);
+  r4.n=ns+1;
+  r4.p=(point *)malloc(sizeof(point)*r4.n);
 
 //side 2 (1-2)
-  get_g_side(x[1],x[2],y[1],y[2],ns,dn0,r,s);
+  get_g_side(p[1],p[2],dn0,&r2);
 //side 4 (0-3)
-  get_g_side(x[0],x[3],y[0],y[3],ns,dn0,r+ns+1,s+ns+1);
+  get_g_side(p[0],p[3],dn0,&r4);
 
   for(j=0;j<=ns;j++){
-    r0=*(r+j+ns+1);
-    s0=*(s+j+ns+1);
-    dr=(*(r+j)-r0)/(double)nr;
-    ds=(*(s+j)-s0)/(double)nr;
+    dr=(r2.p[j].x-r4.p[j].x)/nr;
+    ds=(r2.p[j].y-r4.p[j].y)/nr;
     for(i=0;i<=nr;i++){
-      (vert+i+j*(nr+1))->x=r0+(double)i*dr;
-      (vert+i+j*(nr+1))->y=s0+(double)i*ds;
-      (*ivert)++;
+      verts[nvert0+i+j*(nr+1)].x=r4.p[j].x+(double)i*dr;
+      verts[nvert0+i+j*(nr+1)].y=r4.p[j].y+(double)i*ds;
+      nvert++;
     }
   }
 
   for(j=0;j<ns;j++){
     for(i=0;i<nr;i++){
-      (elem+*ielem)->vid[0]=(i+0)+(j+0)*(nr+1)+nvert;
-      (elem+*ielem)->vid[1]=(i+1)+(j+0)*(nr+1)+nvert;
-      (elem+*ielem)->vid[2]=(i+1)+(j+1)*(nr+1)+nvert;
-      (elem+*ielem)->vid[3]=(i+0)+(j+1)*(nr+1)+nvert;
-      (*ielem)++;
+      (elems+nelem)->vid[0]=(i+0)+(j+0)*(nr+1)+nvert0;
+      (elems+nelem)->vid[1]=(i+1)+(j+0)*(nr+1)+nvert0;
+      (elems+nelem)->vid[2]=(i+1)+(j+1)*(nr+1)+nvert0;
+      (elems+nelem)->vid[3]=(i+0)+(j+1)*(nr+1)+nvert0;
+      if(i==0){
+        strcpy((elems+nelem)->BC[3],bcs[3]);
+        sprintf((elems+nelem)->BC[1],"E  ");
+      }else if(i==nr-1){
+        strcpy((elems+nelem)->BC[1],bcs[1]);
+        sprintf((elems+nelem)->BC[3],"E  ");
+      }else{
+        sprintf((elems+nelem)->BC[1],"E  ");
+        sprintf((elems+nelem)->BC[3],"E  ");
+      }
+      if(j==0){
+        strcpy((elems+nelem)->BC[0],bcs[0]);
+        sprintf((elems+nelem)->BC[2],"E  ");
+      }else if(j==ns-1){
+        strcpy((elems+nelem)->BC[2],bcs[2]);
+        sprintf((elems+nelem)->BC[0],"E  ");
+      }else{
+        sprintf((elems+nelem)->BC[0],"E  ");
+        sprintf((elems+nelem)->BC[2],"E  ");
+      }
+      nelem++;
     }
   }
 
-  free(r);free(s);
-  nvert+=*ivert;
-  nelem+=*ielem;
+  free(r2.p);free(r4.p);
   printf("nelem = %d, nvert = %d\n",nelem,nvert);
 
 return 0;
 }
 
-int make_cquad_space(quad *elem,point *vert,edge *cide,int nt,int nr,double R,double dr0,double *x,double *y,int *ielem,int *ivert,int *icide){
-  
-  int i,j,k,istp;
-  double theta,dtheta,delta;
-  double *r,*s,r0[2],r1[2],s0[2],s1[2];
-  double rr,xc,yc,xa,ya,xb,yb,xd,yd;
+int make_g2quad_space(int nr,int ns,double dr0,double ds0,point *p,char bcs[4][4]){
 
-  printf("Generating %d elements in a curved quadrilateral space with geometric growth\n",nt*nr);
-  
-  *ivert=0;
-  *ielem=0;
-  *icide=0;
+  int i,j,nvert0=nvert;
+  point r0,r1;
+  connector r,r2,r4;
 
-  circle_center_2pR(x[0],y[0],x[1],y[1],R,&xc,&yc);
-  rr = R-dr0;
+  printf("Generating %d elements with geometric growth in two directions\n",ns*nr);
 
-  r=(double *)malloc(sizeof(double)*(nr+1));
-  s=(double *)malloc(sizeof(double)*(nr+1));
+  r2.n=ns+1;
+  r2.p=(point *)malloc(sizeof(point)*r2.n);
+  r4.n=ns+1;
+  r4.p=(point *)malloc(sizeof(point)*r4.n);
+
+  r.n=nr+1;
+  r.p=(point *)malloc(sizeof(point)*r.n);
 
 //side 2 (1-2)
-  r1[0]=x[1];s1[0]=y[1];
-  line_circle_intercept(x[1],y[1],x[2],y[2],xc,yc,rr,r1+1,s1+1);
-
+  get_g_side(p[1],p[2],ds0,&r2);
 //side 4 (0-3)
-  r0[0]=x[0];s0[0]=y[0];
-  line_circle_intercept(x[0],y[0],x[3],y[3],xc,yc,rr,r0+1,s0+1);
+  get_g_side(p[0],p[3],ds0,&r4);
 
-  for(i=0;i<=nt;i++){
-    xb=x[3]+(x[2]-x[3])*((double)i/(double)(nt));
-    yb=y[3]+(y[2]-y[3])*((double)i/(double)(nt));
-    for(j=0;j<=nr;j++){
-      if(j<2){
-        rr=sqrt((r0[j]-xc)*(r0[j]-xc)+(s0[j]-yc)*(s0[j]-yc));
-        delta=sqrt((r0[j]-r1[j])*(r0[j]-r1[j])+(s0[j]-s1[j])*(s0[j]-s1[j]));
-        theta=R/fabs(R)*2.0*asin(delta/(2.0*rr))/((double)nt)*(double)i;
-        xa=(r0[j]-xc)*cos(theta)-(s0[j]-yc)*sin(theta)+xc;
-        ya=(r0[j]-xc)*sin(theta)+(s0[j]-yc)*cos(theta)+yc;
-        (vert+i+j*(nt+1))->x=xa;
-        (vert+i+j*(nt+1))->y=ya;
+  for(j=0;j<=ns;j++){
+    r0=r4.p[j];
+    r1=r2.p[j];
+    get_g_side(r0,r1,dr0,&r);
+    for(i=0;i<=nr;i++) verts[nvert0+i+j*(nr+1)]=r.p[i];
+    nvert+=r.n;
+  }
+
+  for(j=0;j<ns;j++){
+    for(i=0;i<nr;i++){
+      (elems+nelem)->vid[0]=(i+0)+(j+0)*(nr+1)+nvert0;
+      (elems+nelem)->vid[1]=(i+1)+(j+0)*(nr+1)+nvert0;
+      (elems+nelem)->vid[2]=(i+1)+(j+1)*(nr+1)+nvert0;
+      (elems+nelem)->vid[3]=(i+0)+(j+1)*(nr+1)+nvert0;
+      if(i==0){
+        strcpy((elems+nelem)->BC[3],bcs[3]);
+        sprintf((elems+nelem)->BC[1],"E  ");
+      }else if(i==nr-1){
+        strcpy((elems+nelem)->BC[1],bcs[1]);
+        sprintf((elems+nelem)->BC[3],"E  ");
       }else{
-        if(j==2){
-          xd=(vert+i)->x;
-          yd=(vert+i)->y;
-          dr0=sqrt((xa-xd)*(xa-xd)+(ya-yd)*(ya-yd));
-          get_g_side(xd,xb,yd,yb,nr,dr0,r,s);
-        }
-        (vert+i+j*(nt+1))->x=*(r+j);
-        (vert+i+j*(nt+1))->y=*(s+j);
+        sprintf((elems+nelem)->BC[1],"E  ");
+        sprintf((elems+nelem)->BC[3],"E  ");
       }
+      if(j==0){
+        strcpy((elems+nelem)->BC[0],bcs[0]);
+        sprintf((elems+nelem)->BC[2],"E  ");
+      }else if(j==ns-1){
+        strcpy((elems+nelem)->BC[2],bcs[2]);
+        sprintf((elems+nelem)->BC[0],"E  ");
+      }else{
+        sprintf((elems+nelem)->BC[0],"E  ");
+        sprintf((elems+nelem)->BC[2],"E  ");
+      }
+      nelem++;
     }
   }
-  (*ivert)+=(nr+1)*(nt+1);
+
+  free(r2.p);free(r4.p),free(r.p);
+  printf("nelem = %d, nvert = %d\n",nelem,nvert);
+
+return 0;
+}
+
+int make_cquad_space(int nt,int nr,double R,double dr0,double dt0,point *p,char bcs[4][4]){
+  
+  int i,j,nvert0=nvert;
+  double theta,thetb,thet0,delta,rr;
+  double *ta,*tb;
+  point pc,r0,r1;
+  connector r,r2,r3,r4;
+
+  printf("Generating %d elements in a curved quadrilateral space with geometric growth with BCs:\n",nt*nr);
+  for(i=0;i<4;i++)printf("\t\"%s\"\n",bcs[i]);
+  
+  pc=circle_center_2pR(p[0],p[1],R);
+  rr = R-dr0;
+
+  r.n=nr+1;
+  r.p=(point *)malloc(sizeof(point)*r.n);
+  r2.n=nr+1;
+  r2.p=(point *)malloc(sizeof(point)*r2.n);
+  r4.n=nr+1;
+  r4.p=(point *)malloc(sizeof(point)*r4.n);
+  r3.n=nt+1;
+  r3.p=(point *)malloc(sizeof(point)*r3.n);
+  ta=(double *)malloc(sizeof(double)*(nt+1));
+  tb=(double *)malloc(sizeof(double)*(nt+1));
+
+//      3-----s3-----2
+//      |            |
+//      |            |
+//      s4          s2
+// j,r  |            |
+//  ᴧ   | /---s1---\ |
+//  |   0/          \1
+//  |
+//  *---->i,t  (r,theta)
+
+
+//side 2 (1-2)
+  r0=p[1];
+  r1=line_circle_intercept(p[1],p[2],pc,rr);
+  delta=distance(r0,r1);
+  get_g_side(p[1],p[2],delta,&r2);
+
+//side 4 (0-3)
+  r0=p[0];
+  r1=line_circle_intercept(p[0],p[3],pc,rr);
+  delta=distance(r0,r1);
+  get_g_side(p[0],p[3],delta,&r4);
+
+  delta=distance(r4.p[0],r2.p[0]);
+  theta=2.0*asin(delta/(2.0*fabs(R)));
+  
+  delta=distance(r4.p[1],r2.p[1]);
+  thetb=2.0*asin(delta/(2.0*fabs(rr)));
+
+//side 3 (3-2), theta1a, theta1b
+  if(dt0>0.0){ //geometric growth from side 4
+    get_g_side(p[3],p[2],dt0,&r3);
+    thet0=get_theta_0(r4.p[0],p[3],0,dt0,R,pc);
+    get_g1D(0.0,-theta,nt,thet0,ta);
+    thet0=get_theta_0(r4.p[1],p[3],0,dt0,rr,pc);
+    get_g1D(0.0,-thetb,nt,thet0,tb);
+  }else if(dt0<0.0){ //geometric growth from side 2
+    get_g_side(p[2],p[3],-dt0,&r3);
+    thet0=get_theta_0(r2.p[0],p[2],1,-dt0,R,pc);
+    get_g1D(0.0,-theta,nt,thet0,ta);
+    //re-orient from side 4
+    invert_connector(&r3);
+    for(i=0;i<=nt;i++) *(ta+i)=-(theta+*(ta+i));
+    invert(ta,nt+1);
+  }else{ //linear distribution
+    for(i=0;i<=nt;i++){
+      r3.p[i].x=p[3].x+(p[2].x-p[3].x)*((double)i/(double)(nt));
+      r3.p[i].y=p[3].y+(p[2].y-p[3].y)*((double)i/(double)(nt));
+      *(ta+i)=-((double)i)/((double)nt)*theta;
+    }
+  }
+
+  for(i=0;i<=nt;i++){
+    //j=0
+    theta=-R/fabs(R)* *(ta+i);
+    verts[nvert0+i]=rotate_point(r4.p[0],theta,pc);
+    //j=1
+    verts[nvert0+i+nt+1]=line_circle_intercept(verts[nvert0+i],r3.p[i],pc,rr);
+   
+    for(j=2;j<=nr;j++){
+      if(j==2) get_g_side(verts[nvert0+i],r3.p[i],dr0,&r);
+      verts[nvert0+i+j*(nt+1)]=r.p[j];
+    }
+  }
+  nvert+=(nr+1)*(nt+1);
 
   for(i=0;i<nr;i++){
     for(j=0;j<nt;j++){
-      (elem+*ielem)->vid[0]=(j+0)+(i+0)*(nt+1)+nvert;
-      (elem+*ielem)->vid[1]=(j+1)+(i+0)*(nt+1)+nvert;
-      (elem+*ielem)->vid[2]=(j+1)+(i+1)*(nt+1)+nvert;
-      (elem+*ielem)->vid[3]=(j+0)+(i+1)*(nt+1)+nvert;
-      if(i<2){
+      (elems+nelem)->vid[0]=(j+0)+(i+0)*(nt+1)+nvert0;
+      (elems+nelem)->vid[1]=(j+1)+(i+0)*(nt+1)+nvert0;
+      (elems+nelem)->vid[2]=(j+1)+(i+1)*(nt+1)+nvert0;
+      (elems+nelem)->vid[3]=(j+0)+(i+1)*(nt+1)+nvert0;
+      if(i==0){
+        strcpy((elems+nelem)->BC[0],bcs[0]);
+        sprintf((elems+nelem)->BC[2],"E  ");
+      }else if(i==nr-1){
+        strcpy((elems+nelem)->BC[2],bcs[2]);
+        sprintf((elems+nelem)->BC[0],"E  ");
+      }else{
+        sprintf((elems+nelem)->BC[0],"E  ");
+        sprintf((elems+nelem)->BC[2],"E  ");
+      }
+      if(j==0){ //j is build from side 4 [3] to 2 [1]
+        strcpy((elems+nelem)->BC[3],bcs[3]);
+        sprintf((elems+nelem)->BC[1],"E  ");
+      }else if(j==nt-1){
+        strcpy((elems+nelem)->BC[1],bcs[1]);
+        sprintf((elems+nelem)->BC[3],"E  ");
+      }else{
+        sprintf((elems+nelem)->BC[1],"E  ");
+        sprintf((elems+nelem)->BC[3],"E  ");
+      }
+      if(i<3){
         if(i==0){
-          (cide+*icide)->elid=*ielem+nelem;
-          (cide+*icide)->esid=1;
-          (cide+*icide)->curve=R;
-          (cide+*icide)->ccurve='C';
-          (*icide)++;
-          (cide+*icide)->elid=*ielem+nelem;
-          (cide+*icide)->esid=3;
-          (cide+*icide)->curve=-(R-dr0);
-          (cide+*icide)->ccurve='C';
-          (*icide)++;
+          (cides+ncide)->elid=nelem;
+          (cides+ncide)->esid=1;
+          (cides+ncide)->curve=R;
+          (cides+ncide)->ccurve='C';
+          ncide++;
+          (cides+ncide)->elid=nelem;
+          (cides+ncide)->esid=3;
+          (cides+ncide)->curve=-(R-dr0);
+          (cides+ncide)->ccurve='C';
+          ncide++;
+        }else if(i==1){
+          (cides+ncide)->elid=nelem;
+          (cides+ncide)->esid=1;
+          (cides+ncide)->curve=R-dr0;
+          (cides+ncide)->ccurve='C';
+          ncide++;
+          (cides+ncide)->elid=nelem;
+          (cides+ncide)->esid=3;
+          (cides+ncide)->curve=-2*(R-dr0);
+          (cides+ncide)->ccurve='C';
+          ncide++;
         }else{
-          (cide+*icide)->elid=*ielem+nelem;
-          (cide+*icide)->esid=1;
-          (cide+*icide)->curve=R-dr0;
-          (cide+*icide)->ccurve='C';
-          (*icide)++;
+          (cides+ncide)->elid=nelem;
+          (cides+ncide)->esid=1;
+          (cides+ncide)->curve=2*(R-dr0);
+          (cides+ncide)->ccurve='C';
+          ncide++;
         }
       }
-      (*ielem)++;
+      nelem++;
     }
   }
 
-  free(r),free(s);
-  nvert+=*ivert;
-  nelem+=*ielem;
-  ncide+=*icide;
+  free(r.p);
+  free(r2.p);
+  free(r3.p);
+  free(r4.p);
+  free(ta);free(tb);
   printf("nelem = %d, nvert = %d\n",nelem,nvert);
 
-return *ielem;
+return 0;
 }
 
-int make_tri_space(quad *elem,point *vert,int ns,double *x,double *y,int *ielem,int *ivert){
+int make_tri_space(int ns,double *x,double *y){
 
-  int i,j,qelem=0,qvert=0;
+  int i,j;
 
   double mx[3],my[3],gx=0.0,gy=0.0;
   double xq[4],yq[4];
-
-  *ielem=0;
-  *ivert=0;
 
   for(i=0;i<3;i++){
     gx+=x[i];
@@ -337,22 +534,20 @@ int make_tri_space(quad *elem,point *vert,int ns,double *x,double *y,int *ielem,
     xq[2]=gx;    yq[2]=gy;
     xq[3]=mx[j]; yq[3]=my[j];
 
-    make_quad_space(elem+nelem,vert+nvert,ns,ns,xq,yq,&qelem,&qvert);
+//  make_quad_space(ns,ns,xq,yq);
   }
 
-return *ielem;
+return 0;
 }
 
-int make_vtri_space(quad *elem,point *vert,int nb,int nh,double *x,double *y,int *ielem,int *ivert){
+int make_vtri_space(int nb,int nh,double *x,double *y){
 
-  int i,j,qelem=0,qvert=0,ns,nr;
+  int i,j,ns,nr;
 
   double mx[3],my[3],gx=0.0,gy=0.0;
   double xq[4],yq[4];
 
-  *ielem=0;
-  *ivert=0;
-
+/*
   for(i=0;i<3;i++){
     j=(i+1)%3;
     mx[i]=0.5*(x[i]+x[j]);
@@ -362,6 +557,18 @@ int make_vtri_space(quad *elem,point *vert,int nb,int nh,double *x,double *y,int
   }
   gx/=3.0;
   gy/=3.0;
+*/
+  mx[0]=0.5*(x[0]+x[1]);
+  my[0]=0.5*(y[0]+y[1]);
+
+  mx[1]=(nb*x[1]+nh*x[2])/(nh+nb);
+  my[1]=(nb*y[1]+nh*y[2])/(nh+nb);
+
+  mx[2]=(nh*x[2]+nb*x[0])/(nh+nb);
+  my[2]=(nh*y[2]+nb*y[0])/(nh+nb);
+
+  gx=(nh*x[2]+nb*nb*mx[0])/(nh+nb*nb);
+  gy=(nh*y[2]+nb*nb*my[0])/(nh+nb*nb);
 
   for(i=0;i<3;i++){
     j=(i+2)%3;
@@ -374,21 +581,19 @@ int make_vtri_space(quad *elem,point *vert,int nb,int nh,double *x,double *y,int
     if(i==0) nr=nh;
     if(i==1) ns=nh;
 
-    make_quad_space(elem+nelem,vert+nvert,ns,nr,xq,yq,&qelem,&qvert);
+//  make_quad_space(ns,nr,xq,yq);
   }
 
-return *ielem;
+return 0;
 }
 
-int make_ctri_space(quad *elem,point *vert,edge *cide,int nb,int nh,double R,double dr0,double *x,double *y,int *ielem,int *ivert){
+int make_ctri_space(int nb,int nh,double R,double dr0,double *x,double *y){
 
-  int i,j,qelem=0,qvert=0,qcide=0,ns,nr;
+  int i,j,ns,nr;
 
   double mx[3],my[3],gx=0.0,gy=0.0;
   double xq[4],yq[4],xc,yc,aa,w[3];
-
-  *ielem=0;
-  *ivert=0;
+  point p1,p2,pc;
 
   w[0]=2.0*(double)nb;
   w[1]=w[0];
@@ -399,7 +604,13 @@ int make_ctri_space(quad *elem,point *vert,edge *cide,int nb,int nh,double R,dou
     my[i]=(y[i]*w[i]+y[j]*w[j])/(w[i]+w[j]);
   }
 
-  circle_center_2pR(x[0],y[0],x[1],y[1],R,&xc,&yc);
+  p1.x=x[0];
+  p1.y=y[0];
+  p2.x=x[1];
+  p2.y=y[1];
+  pc=circle_center_2pR(p1,p2,R);
+  xc=pc.x;
+  yc=pc.y;
 
   aa=sqrt((mx[0]-xc)*(mx[0]-xc)+(my[0]-yc)*(my[0]-yc));
   mx[0]=(mx[0]-xc)*fabs(R)/aa+xc;
@@ -412,21 +623,21 @@ int make_ctri_space(quad *elem,point *vert,edge *cide,int nb,int nh,double R,dou
   xq[1]=mx[0]; yq[1]=my[0];
   xq[2]=gx;    yq[2]=gy;
   xq[3]=mx[2]; yq[3]=my[2];
-  make_cquad_space(elem+nelem,vert+nvert,cide+ncide,nb,nh,R,dr0,xq,yq,&qelem,&qvert,&qcide);
+//make_cquad_space(nb,nh,R,dr0,0.0,xq,yq);
 
   xq[0]=mx[0]; yq[0]=my[0];
   xq[1]=x[1];  yq[1]=y[1];
   xq[2]=mx[1]; yq[2]=my[1];
   xq[3]=gx;    yq[3]=gy;
-  make_cquad_space(elem+nelem,vert+nvert,cide+ncide,nb,nh,R,dr0,xq,yq,&qelem,&qvert,&qcide);
+//make_cquad_space(nb,nh,R,dr0,0.0,xq,yq);
 
   xq[0]=x[2];  yq[0]=y[2];
   xq[1]=mx[2]; yq[1]=my[2];
   xq[2]=gx;    yq[2]=gy;
   xq[3]=mx[1]; yq[3]=my[1];
-  make_quad_space(elem+nelem,vert+nvert,nb,nb,xq,yq,&qelem,&qvert);
+//make_quad_space(nb,nb,xq,yq);
 
-return *ielem;
+return 0;
 }
 
 double growth_ratio(int nx,double delta,double del0){
@@ -451,91 +662,233 @@ double growth_ratio(int nx,double delta,double del0){
 return f;
 }
 
-int get_g_side(double x1,double x2,double y1, double y2,int n,double d0,double *r, double *s){
+int get_g_side(point p1,point p2,double d0,connector *r){
 
   int j;
-
-  double dr=(x2-x1);
-  double ds=(y2-y1);
+  double dr=(p2.x-p1.x);
+  double ds=(p2.y-p1.y);
   double delta=sqrt(dr*dr+ds*ds);
-  double ratio=growth_ratio(n,delta,d0);
+  double ratio=growth_ratio((r->n)-1,delta,d0);
   double dr0=d0*dr/delta;
   double ds0=d0*ds/delta;
-  *r=x1;
-  *s=y1;
-  for(j=1;j<=n;j++){
-    *(r+j)=*(r+j-1)+dr0*pow(ratio,(double)(j-1));
-    *(s+j)=*(s+j-1)+ds0*pow(ratio,(double)(j-1));
+  (r->p[0])=p1;
+  for(j=1;j<(r->n);j++){
+    (r->p[j]).x=(r->p[j-1]).x+dr0*pow(ratio,(double)(j-1));
+    (r->p[j]).y=(r->p[j-1]).y+ds0*pow(ratio,(double)(j-1));
   }
+
+return j;
+}
+
+int get_g1D(double x1,double x2,int n,double d0,double *r){
+
+  int j;
+  double dr=(x2-x1);
+  double ratio=growth_ratio(n,fabs(dr),d0);
+  *r=x1;
+   for(j=1;j<=n;j++) *(r+j)=*(r+j-1)+d0*dr/fabs(dr)*pow(ratio,(double)(j-1));
 
 return n;
 }
 
-int line_circle_intercept(double x1,double y1,double x2,double y2,double xc,double yc,double rr,double *xi,double *yi){
+point line_circle_intercept(point p1,point p2,point pc,double rr){
 
+  point pi;
   double dx2,dy2;
-  double dx1=x2-x1;
-  double dy1=y2-y1;
-  if(fabs(dx1)>1.0e-16){
+  double dx1=p2.x-p1.x;
+  double dy1=p2.y-p1.y;
+  if(fabs(dx1)>1.0e-12){
     double m=dy1/dx1;
-    double c=-m*x1+y1;
+    double c=-m*p1.x+p1.y;
     double A=(m*m+1.0);
-    double B=2.0*(m*c-m*yc-xc);
-    double C=yc*yc-rr*rr+xc*xc-2.0*c*yc+c*c;
+    double B=2.0*(m*c-m*pc.y-pc.x);
+    double C=pc.y*pc.y-rr*rr+pc.x*pc.x-2.0*c*pc.y+c*c;
     double des=B*B-4.0*A*C;
     if(des<0.0){
       printf("error: undefined intercept\n");
-      *xi=0.0;
-      *yi=0.0;
-      return -1;
+      pi.x=0.0;
+      pi.y=0.0;
+      return pi;
     }
     //Always want the intercept closest to x1,y1
     dx1=(-B-sqrt(des))/(2.0*A);
     dx2=(-B+sqrt(des))/(2.0*A);
-    dy1=m*dx1+c-y1;
-    dy2=m*dx2+c-y1;
-    dx1-=x1;
-    dx2-=x1;
+    dy1=m*dx1+c-p1.y;
+    dy2=m*dx2+c-p1.y;
+    dx1-=p1.x;
+    dx2-=p1.x;
     dx1=sqrt(dx1*dx1+dy1*dy1);
     dx2=sqrt(dx2*dx2+dy2*dy2);
     if(dx1<dx2){
-      *xi=(-B-sqrt(des))/(2.0*A);
+      pi.x=(-B-sqrt(des))/(2.0*A);
     }else{
-      *xi=(-B+sqrt(des))/(2.0*A);
+      pi.x=(-B+sqrt(des))/(2.0*A);
     }
-    *yi=m* *xi+c;
+    pi.y=m*pi.x+c;
   }else{
-    *xi=x1;
-    dy1= sqrt(rr*rr-(x1-xc)*(x1-xc))+yc;
-    dy2=-sqrt(rr*rr-(x1-xc)*(x1-xc))+yc;
-    if(fabs(dy1-y1)<fabs(dy2-y1)){
-     *yi=dy1;
+    pi.x=p1.x;
+    dy1= sqrt(rr*rr-(p1.x-pc.x)*(p1.x-pc.x))+pc.y;
+    dy2=-sqrt(rr*rr-(p1.x-pc.x)*(p1.x-pc.x))+pc.y;
+    if(fabs(dy1-p1.y)<fabs(dy2-p1.y)){
+     pi.y=dy1;
     }else{
-     *yi=dy2;
+     pi.y=dy2;
     }
   }
 
-return 0;
+  return pi;
 }
 
-int circle_center_2pR(double x0,double y0,double x1,double y1,double R,double *xc,double *yc){
+point line_line_intercept(point p1,point p2,point p3, point p4){
+  point p0={0.0,0.0};
+  double denom=(p1.x-p2.x)*(p3.y-p4.y)-(p1.y-p2.y)*(p3.x-p4.x);
+  if(fabs(denom)<1.0e-12){
+    printf("Error in line_line_intercept: lines are parallel!");
+    return p0;
+  }
+  p0.x=(p1.x*p2.y-p1.y*p2.x)*(p3.x-p4.x)-(p1.x-p2.x)*(p3.x*p4.y-p3.y*p4.x);
+  p0.x/=denom;
+  p0.y=(p1.x*p2.y-p1.y*p2.x)*(p3.y-p4.y)-(p1.y-p2.y)*(p3.x*p4.y-p3.y*p4.x);
+  p0.y/=denom;
 
-  double delta = sqrt((x0-x1)*(x0-x1)+(y0-y1)*(y0-y1));
+  return p0;
+}
+
+point circle_center_2pR(point p0,point p1,double R){
+
+  double delta = sqrt((p0.x-p1.x)*(p0.x-p1.x)+(p0.y-p1.y)*(p0.y-p1.y));
   double aa = delta/2.0;
   double bb = sqrt(R*R-aa*aa);
-  double xa = 0.5*(x1-x0); double ya = 0.5*(y1-y0);
+  double xa = 0.5*(p1.x-p0.x); double ya = 0.5*(p1.y-p0.y);
+  point pc;
   if(R>0.0){ 
-    *xc = x0+xa-bb*ya/aa; 
-    *yc = y0+ya+bb*xa/aa;
+    pc.x = p0.x+xa-bb*ya/aa; 
+    pc.y = p0.y+ya+bb*xa/aa;
   }else if(R<0.0){
-    *xc = x0+xa+bb*ya/aa;
-    *yc = y0+ya-bb*xa/aa;
+    pc.x = p0.x+xa+bb*ya/aa;
+    pc.y = p0.y+ya-bb*xa/aa;
   }
 
-return 0;
+  return pc;
 }
 
+double get_theta_0(point p0,point p1,int icor,double dt0,double R,point pc){
+  double cp,del,fact;
+  point p2,p3,p4;
 
+  double m=(p1.y-p0.y)/(p1.x-p0.x);
+  double B1=p0.y-m*p0.x;
+  double B2=B1+dt0*sqrt(1+m*m);
+  if(fabs(p1.x-p0.x)<1.0e-10){
+    p3.x=p0.x-dt0;
+    p3.y=p0.y;
+    p4.x=p1.x-dt0;
+    p4.y=p0.y;
+  }else if(fabs(m)>1){ 
+    p3.y=p0.y;
+    p3.x=(p3.y-B2)/m;
+    p4.y=p1.y;
+    p4.x=(p4.y-B2)/m;
+  }else{
+    p3.x=p0.x;
+    p3.y=m*p3.x+B2;
+    p4.x=p1.x;
+    p4.y=m*p4.x+B2;
+  }
+  p2=line_circle_intercept(p3,p4,pc,R);
 
+  cp=(p1.x-p0.x)*(p2.y-p0.y)-(p2.x-p0.x)*(p1.y-p0.y);
+  if(((cp>0.0)&&(icor==1))||((cp<0.0)&&(icor==0))){
+    del=sqrt((p2.x-p0.x)*(p2.x-p0.x)+(p2.y-p0.y)*(p2.y-p0.y));
+    return 2.0*asin(del/(2.0*fabs(R)));
+  }
+  B2=B1-dt0*sqrt(1+m*m);
+  if(fabs(p1.x-p0.x)<1.0e-10){
+    p3.x=p0.x+dt0;
+    p3.y=p0.y;
+    p4.x=p1.x+dt0;
+    p4.y=p0.y;
+  }else if(fabs(m)>1){ 
+    p3.y=p0.y;
+    p3.x=(p3.y-B2)/m;
+    p4.y=p1.y;
+    p4.x=(p4.y-B2)/m;
+  }else{
+    p3.x=p0.x;
+    p3.y=m*p3.x+B2;
+    p4.x=p1.x;
+    p4.y=m*p4.x+B2;
+  }
+  p2=line_circle_intercept(p3,p4,pc,R);
+  del=sqrt((p2.x-p0.x)*(p2.x-p0.x)+(p2.y-p0.y)*(p2.y-p0.y));
+  return 2.0*asin(del/(2.0*fabs(R)));
+}
 
+int invert(double *x,int n){
 
+  int i,j;
+  double *y;
+
+  y=malloc(sizeof(double)*n);
+
+  for(i=n-1,j=0;i>=0;i--,j++) y[j]=x[i];
+  for(i=0;i<n;i++) x[i]=y[i];
+
+  free(y);
+
+return i;
+}
+
+int invert_connector(connector *r){
+
+  int i,j;
+  point *q;
+
+  q=(point *)malloc(sizeof(point)*(r->n));
+  for(i=(r->n-1),j=0;i>=0;i--,j++) q[j]=r->p[i];
+  for(i=0;i<(r->n);i++) r->p[i]=q[i];
+
+  free(q);
+
+return i;
+}
+
+point rotate_point(point pin,double theta,point zero){
+  point pout;
+
+  pout.x = (pin.x-zero.x)*cos(theta)-(pin.y-zero.y)*sin(theta)+zero.x;
+  pout.y = (pin.x-zero.x)*sin(theta)+(pin.y-zero.y)*cos(theta)+zero.y;
+
+ return pout;
+}
+
+double distance(point p1,point p2){
+  double dist=sqrt((p1.x-p2.x)*(p1.x-p2.x)+(p1.y-p2.y)*(p1.y-p2.y));
+  return dist;
+}
+
+point reflect_point(point pin,point p0,point p1){
+  point pout;
+  double a=p1.y-p0.y;
+  double b=p0.x-p1.x;
+  double c=(p1.x-p0.x)*p0.y-(p1.y-p0.y)*p0.x;
+  double RHS=-2.0*(a*pin.x+b*pin.y+c)/(a*a+b*b);
+  pout.x=RHS*a+pin.x;
+  pout.y=RHS*b+pin.y;
+  return pout;
+}
+
+point translate_point(point pin,point del){
+  point pout;
+  pout.x=pin.x+del.x;
+  pout.y=pin.y+del.y;
+  pout.z=pin.z+del.z;
+  return pout;
+}
+
+int reset(void){
+  printf("\n\treseting mesh generator\n\n");
+  nelem = 0;
+  nvert = 0;
+  ncide = 0;
+}
