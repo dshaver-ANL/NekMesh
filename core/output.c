@@ -134,4 +134,14 @@ int output_pts(point *pts,int npts,char *fnm){
   return i;
 }
 //-------------------------------------------------------------------
+int output_cons(connector *cons,int ncons,char *fnm){
 
+  int i,j;
+  FILE *cnout;
+
+  cnout=fopen(fnm,"w");
+  for(i=0;i<ncons;i++){
+    for(j=0;j<cons[i].n;j++) fprintf(cnout,"%13.7f %13.7f\n",cons[i].p[j].x,cons[i].p[j].y);
+    fprintf(cnout,"\n");
+  }
+}

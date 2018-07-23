@@ -1,12 +1,12 @@
 #define max_elem 25000
-#define max_block 25
+#define max_mesh 250
 
 typedef struct { double x; double y; double z;} point;
 typedef struct { int n; point *p;} connector;
 typedef struct { int elid; int esid; double curve; char ccurve;} edge;
 typedef struct { int vid[4]; char BC[4][2][4];} quad;
 typedef struct { int vid[8];} hex;
-typedef struct { point vert[8]; int btid; int elid[2]; int nbid[8]; char BC[8][2][4];} block;
+typedef struct { connector con[4]; int neiid[4]; char BC[4][2][4];} mesh;
 
 int make_quad_space(int,int,point*,char[4][2][4]);
 int make_gquad_space(int,int,double,point*,char[4][2][4]);
@@ -30,6 +30,7 @@ point linpoint(double,point,point);
 point centroid(point*,int);
 int invert(double*,int);
 int invert_connector(connector*);
+connector make_lin_side(point,point,int);
 
 int write_rea(char*);
 int output_pts(point*,int,char*);

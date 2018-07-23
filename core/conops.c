@@ -130,3 +130,22 @@ int invert_connector(connector *r){
 return i;
 }
 
+connector make_lin_side(point p1,point p2,int np){
+  connector conout;
+  int i;
+  double delx=p2.x-p1.x;
+  double dely=p2.y-p1.y;
+
+  conout.n=np;
+  conout.p=malloc(np*sizeof(point));
+
+  conout.p[0]=p1;
+  conout.p[np-1]=p2;
+
+  for(i=1;i<np-1;i++){
+    conout.p[i].x=(p2.x-p1.x)*(double)i/(double)(np-1)+p1.x;
+    conout.p[i].y=(p2.y-p1.y)*(double)i/(double)(np-1)+p1.y;
+  }
+
+  return conout;
+}
