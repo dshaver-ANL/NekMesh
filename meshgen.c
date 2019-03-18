@@ -36,32 +36,34 @@ int main(int argc, char *argv[]){
     }
   }
 
-#include "VTR/VTR.c"
+//#include "VTR/VTR.c"
+#include "7-pin/7-pin.c"
+  
+//corners[0].x=0.0;corners[0].y=-1.0;
+//corners[1].x=64.0;corners[1].y=-1.0;
+//corners[2].x=64.0;corners[2].y=0.0;
+//corners[3].x=0.0;corners[3].y=0.0;
+//sprintf(bcs[0][0],"W  ");
+//sprintf(bcs[1][0],"O  ");
+//sprintf(bcs[2][0],"E  ");
+//sprintf(bcs[3][0],"v  ");
 
-/*  
-  corners[0].x=0.0;corners[0].y=0.0;
-  corners[1].x=0.8;corners[1].y=-0.1;
-  corners[2].x=1.0;corners[2].y=1.0;
-  corners[3].x=-0.1;corners[3].y=0.86;
-  sprintf(bcs[0],"W  ");
-  sprintf(bcs[1],"O  ");
-  sprintf(bcs[2],"SYM");
-  sprintf(bcs[3],"E  ");
+//make_gquad_space(192,9,0.0045,corners,bcs);
 
-  make_cquad_space(5,6,-1.1,0.03,-0.04,corners,bcs);
+//corners[0].x=64.0;corners[0].y=1.0;
+//corners[1].x=0.0;corners[1].y=1.0;
+//corners[2].x=0.0;corners[2].y=0.0;
+//corners[3].x=64.0;corners[3].y=0.0;
+//sprintf(bcs[0][0],"W  ");
+//sprintf(bcs[1][0],"v  ");
+//sprintf(bcs[2][0],"E  ");
+//sprintf(bcs[3][0],"O  ");
 
-  corners[1]=corners[0];
-  corners[2]=corners[3];
-  corners[0].x=-0.8;corners[0].y=0.1;
-  corners[3].x=-0.6;corners[3].y=0.7;
-  sprintf(bcs[1],"E  ");
-  sprintf(bcs[3],"v  ");
-
-  make_cquad_space(5,6,1.1,0.03,0.00,corners,bcs);
-  write_rea(fname);
- */ 
-  sprintf(fname,"pts.dat");
-  output_pts(points,npts,fname);
+//make_gquad_space(192,9,0.0045,corners,bcs);
+//write_rea(fname);
+    
+//sprintf(fname,"pts.dat");
+//output_pts(points,npts,fname);
   sprintf(fname,"vts.dat");
   if(nvert>0) output_pts(verts,nvert,fname);
 

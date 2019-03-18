@@ -34,7 +34,7 @@
    0.00000     p030 > 0 ==> properties set in uservp()
    0.00000     p031 NPERT: #perturbation modes
    0.00000     p032 #BCs in re2 file, if > 0
-   0.00000     p033
+   2.00000     p033
    0.00000     p034
    0.00000     p035
    0.00000     p036

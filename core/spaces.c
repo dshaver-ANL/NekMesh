@@ -218,8 +218,8 @@ return 0;
 int make_cquad_space(int nt,int nr,double R,double dr0,double dt0,point *p,char bcs[4][2][4]){
   
   int i,j,k,nvert0=nvert;
-  double theta,thetb,thet0,delta,rr;
-  double *ta,*tb;
+  double theta,thet0,delta;
+  double *ta,*rb;
   point pc,r0,r1;
   connector r,r2,r3,r4;
 
@@ -228,7 +228,6 @@ int make_cquad_space(int nt,int nr,double R,double dr0,double dt0,point *p,char 
 //for(k=0;k<nfld;k++) for(i=0;i<4;i++) printf("\t\"%s\"\n",bcs[i][k]);
   
   pc=circle_center_2pR(p[0],p[1],R);
-  rr = R-dr0;
 
   r.n=nr+1;
   r.p=(point *)malloc(sizeof(point)*r.n);
@@ -239,7 +238,10 @@ int make_cquad_space(int nt,int nr,double R,double dr0,double dt0,point *p,char 
   r3.n=nt+1;
   r3.p=(point *)malloc(sizeof(point)*r3.n);
   ta=(double *)malloc(sizeof(double)*(nt+1));
-  tb=(double *)malloc(sizeof(double)*(nt+1));
+  rb=(double *)malloc(sizeof(double)*(nr+1));
+
+  *rb=R;
+  *(rb+1)=R-dr0;
 
 //      3-----s3-----2
 //      |            |
@@ -254,29 +256,29 @@ int make_cquad_space(int nt,int nr,double R,double dr0,double dt0,point *p,char 
 
 //side 2 (1-2)
   r0=p[1];
-  r1=line_circle_intercept(p[1],p[2],pc,rr);
+  r1=line_circle_intercept(p[1],p[2],pc,*(rb+1));
   delta=distance(r0,r1);
   get_g_side(p[1],p[2],delta,&r2);
 
 //side 4 (0-3)
   r0=p[0];
-  r1=line_circle_intercept(p[0],p[3],pc,rr);
+  r1=line_circle_intercept(p[0],p[3],pc,*(rb+1));
   delta=distance(r0,r1);
   get_g_side(p[0],p[3],delta,&r4);
 
   delta=distance(r4.p[0],r2.p[0]);
   theta=2.0*asin(delta/(2.0*fabs(R)));
   
-  delta=distance(r4.p[1],r2.p[1]);
-  thetb=2.0*asin(delta/(2.0*fabs(rr)));
+  for(i=2;i<=nr;i++){
+    if(R>0.0) *(rb+i)=*(rb+i-1)+0.5*(distance(r2.p[i],r2.p[i-1])+distance(r4.p[i],r4.p[i-1]));
+    if(R<0.0) *(rb+i)=*(rb+i-1)-pow(1.1,(double)(i-1))*fmax(distance(r2.p[i],r2.p[i-1]),distance(r4.p[i],r4.p[i-1]));
+  }
 
 //side 3 (3-2), theta1a, theta1b
   if(dt0>0.0){ //geometric growth from side 4
     get_g_side(p[3],p[2],dt0,&r3);
     thet0=get_theta_0(r4.p[0],p[3],0,dt0,R,pc);
     get_g1D(0.0,-theta,nt,thet0,ta);
-    thet0=get_theta_0(r4.p[1],p[3],0,dt0,rr,pc);
-    get_g1D(0.0,-thetb,nt,thet0,tb);
   }else if(dt0<0.0){ //geometric growth from side 2
     get_g_side(p[2],p[3],-dt0,&r3);
     thet0=get_theta_0(r2.p[0],p[2],1,-dt0,R,pc);
@@ -298,7 +300,7 @@ int make_cquad_space(int nt,int nr,double R,double dr0,double dt0,point *p,char 
     theta=-R/fabs(R)* *(ta+i);
     verts[nvert0+i]=rotate_point(r4.p[0],theta,pc);
     //j=1
-    verts[nvert0+i+nt+1]=line_circle_intercept(verts[nvert0+i],r3.p[i],pc,rr);
+    verts[nvert0+i+nt+1]=line_circle_intercept(verts[nvert0+i],r3.p[i],pc,*(rb+1));
    
     for(j=2;j<=nr;j++){
       if(j==2) get_g_side(verts[nvert0+i],r3.p[i],dr0,&r);
@@ -335,36 +337,23 @@ int make_cquad_space(int nt,int nr,double R,double dr0,double dt0,point *p,char 
           sprintf((elems+nelem)->BC[3][k],"E  ");
         }
       }
-      if(i<3){
-        if(i==0){
-          (cides+ncide)->elid=nelem;
-          (cides+ncide)->esid=1;
-          (cides+ncide)->curve=R;
-          (cides+ncide)->ccurve='C';
-          ncide++;
-          (cides+ncide)->elid=nelem;
-          (cides+ncide)->esid=3;
-          (cides+ncide)->curve=-(R-dr0);
-          (cides+ncide)->ccurve='C';
-          ncide++;
-        }else if(i==1){
-          (cides+ncide)->elid=nelem;
-          (cides+ncide)->esid=1;
-          (cides+ncide)->curve=R-dr0;
-          (cides+ncide)->ccurve='C';
-          ncide++;
-          (cides+ncide)->elid=nelem;
-          (cides+ncide)->esid=3;
-          (cides+ncide)->curve=-2*(R-dr0);
-          (cides+ncide)->ccurve='C';
-          ncide++;
-        }else{
-          (cides+ncide)->elid=nelem;
-          (cides+ncide)->esid=1;
-          (cides+ncide)->curve=2*(R-dr0);
-          (cides+ncide)->ccurve='C';
-          ncide++;
-        }
+      if(i<nr-1){
+        (cides+ncide)->elid=nelem;
+        (cides+ncide)->esid=1;
+        (cides+ncide)->curve=*(rb+i);
+        (cides+ncide)->ccurve='C';
+        ncide++;
+        (cides+ncide)->elid=nelem;
+        (cides+ncide)->esid=3;
+        (cides+ncide)->curve=-*(rb+i+1);
+        (cides+ncide)->ccurve='C';
+        ncide++;
+      }else{
+        (cides+ncide)->elid=nelem;
+        (cides+ncide)->esid=1;
+        (cides+ncide)->curve=*(rb+i);
+        (cides+ncide)->ccurve='C';
+        ncide++;
       }
       nelem++;
     }
@@ -374,7 +363,7 @@ int make_cquad_space(int nt,int nr,double R,double dr0,double dt0,point *p,char 
   free(r2.p);
   free(r3.p);
   free(r4.p);
-  free(ta);free(tb);
+  free(ta);free(rb);
   printf("nelem = %d, nvert = %d\n",nelem,nvert);
 
 return 0;
