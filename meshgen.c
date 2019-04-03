@@ -12,6 +12,7 @@ point verts[4*max_elem];
 edge cides[4*max_elem];
 
 point *points;
+point origin={0.0, 0.0};
 
 #include "core/spaces.c"
 #include "core/triangles.c"

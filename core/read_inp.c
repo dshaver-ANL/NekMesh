@@ -125,9 +125,15 @@ int read_points(FILE *fp){
       pt1=(rots+j)->pt1;
       r1=(rots+j)->ang;
       pt2=(rots+j)->org;
-      printf("point %d: Rotating point %d %.2f degrees about point %d\n",ipt+1,pt1,r1,pt2);
-      r1*=M_PI/180.0;
-      points[ipt]=rotate_point(points[pt1-1],r1,points[pt2-1]);
+      if(pt2==0){
+        printf("point %d: Rotating point %d %.2f degrees about the origin\n",ipt+1,pt1,r1);
+        r1*=M_PI/180.0;
+        points[ipt]=rotate_point(points[pt1-1],r1,origin);
+      }else{
+        printf("point %d: Rotating point %d %.2f degrees about point %d\n",ipt+1,pt1,r1,pt2);
+        r1*=M_PI/180.0;
+        points[ipt]=rotate_point(points[pt1-1],r1,points[pt2-1]);
+      }
       ipt++;
       break;
   }}}
