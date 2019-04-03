@@ -4,10 +4,10 @@ list 12 points.dat  #12 points in file points.dat
 mid 1 2 
 mid 9 10
 mid 3 4  #15
-circle 0.0 0.0 1.5  #invalid
 mid 11 12
 mid 5 6
 mid 7 8  #18
+rotate 10 15.0 1
 
 [spaces]
 quad{

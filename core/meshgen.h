@@ -11,6 +11,7 @@ typedef struct { point vert[8]; int btid; int elid[2]; int nbid[8]; char BC[8][2
 //point generation operations
 typedef struct {char fname[256];int npts;} list;
 typedef struct {int pt1,pt2;} mid;
+typedef struct {int pt1,org; double ang;} rot;
 
 int make_quad_space(int,int,point*,char[4][2][4]);
 int make_gquad_space(int,int,double,point*,char[4][2][4]);

@@ -36,11 +36,6 @@ int main(int argc, char *argv[]){
   sprintf(fname,"newmesh.inp");
   read_inp(fname);
 
-  for(i=0;i<npts;i++){
-    printf("%d: %15.8e, %15.8e\n",i,points[i].x,points[i].y);
-  } 
-  printf("\n");
-
   sprintf(fname,"newmesh.rea");
 
   for(i=1;i<argc;i++){
@@ -61,10 +56,6 @@ int main(int argc, char *argv[]){
     corners[1]=points[box[i][1]-1];
     corners[2]=points[box[i][2]-1];
     corners[3]=points[box[i][3]-1];
-    for(j=0;j<4;j++){
-      printf("%d: %15.8e, %15.8e\n",j,corners[j].x,corners[j].y);
-    }
-    printf("\n");
 
     make_cquad_space(ny,nx[i],rr[i],0.0,0.0,corners,bcs);
   }

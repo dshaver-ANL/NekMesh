@@ -27,22 +27,26 @@ int read_points(FILE *fp){
 
 #define LIST 0
 #define MID 1
+#define ROT 2
 
-#define VOPS 2
+#define VOPS 3
 #define MXTOKL 16
 
   char line[MXLS];
-  char ops[VOPS][MXTOKL]={"list\0","mid\0"};
+  char ops[VOPS][MXTOKL]={"list\0","mid\0","rotate\0"};
 //char op[MXTOKL];
   char *lfile[256];
   char *tok[MXTOKL];
   char *cpt;
+
+  double r1;
   
-  int i,j,noop,ipt=0;
+  int i,j,noop,ipt=0,pt1,pt2,pt3;
   int nops[VOPS]={0,0},iop[VOPS]={0,0};
 
   list *lists;
   mid *mids;
+  rot *rots;
 
 // count the valid operations
   printf("Counting point operations...\n");
@@ -70,8 +74,9 @@ int read_points(FILE *fp){
 
 // allocate memory
   points=malloc(npts*sizeof(point));
-  lists =malloc(nops[0]*sizeof(list));
-  mids  =malloc(nops[1]*sizeof(mid));
+  lists =malloc(nops[LIST]*sizeof(list));
+  mids  =malloc(nops[MID]*sizeof(mid));
+  rots  =malloc(nops[ROT]*sizeof(rot));
 
 // read the operations
   rewind(fp);
@@ -93,6 +98,11 @@ int read_points(FILE *fp){
           (mids+iop[i])->pt1=atoi(tok[1]);
           (mids+iop[i])->pt2=atoi(tok[2]);
           iop[i]++;
+        }else if(i==ROT){
+          (rots+iop[i])->pt1=atoi(tok[1]);
+          (rots+iop[i])->ang=atof(tok[2]);
+          (rots+iop[i])->org=atoi(tok[3]);
+          iop[i]++;
         }
       }
     }   
@@ -100,14 +110,27 @@ int read_points(FILE *fp){
 
 // do the operations
   printf("Generating point data...\n");
-  for(i=0;i<VOPS;i++){ for(j=0;j<nops[i];j++){
-    if(i==LIST) read_list(lists[j],&ipt);
-    else if(i==MID){
-      printf("Generating mid point between points %d and %d\n",(mids+j)->pt1,(mids+j)->pt2);
-      points[ipt]=midpoint(points[(mids+j)->pt1-1],points[(mids+j)->pt2-1]);
+  for(i=0;i<VOPS;i++){ for(j=0;j<nops[i];j++){switch(i){
+    case LIST:
+      read_list(lists[j],&ipt);
+      break;
+    case MID:
+      pt1=(mids+j)->pt1;
+      pt2=(mids+j)->pt2;
+      printf("point %d: Generating mid point between points %d and %d\n",ipt+1,pt1,pt2);
+      points[ipt]=midpoint(points[pt1-1],points[pt2-1]);
       ipt++;
-    }
-  }}
+      break;
+    case ROT:
+      pt1=(rots+j)->pt1;
+      r1=(rots+j)->ang;
+      pt2=(rots+j)->org;
+      printf("point %d: Rotating point %d %.2f degrees about point %d\n",ipt+1,pt1,r1,pt2);
+      r1*=M_PI/180.0;
+      points[ipt]=rotate_point(points[pt1-1],r1,points[pt2-1]);
+      ipt++;
+      break;
+  }}}
   printf("...Done!\n\n");
 
 return npts;
