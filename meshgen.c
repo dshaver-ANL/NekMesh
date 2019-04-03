@@ -26,16 +26,20 @@ int main(int argc, char *argv[]){
   char bcs[4][2][4];
 
   point corners[4];
-  point axis;
+
+  double rr[6]={-1.3,1.6,-1.3,1.6,-1.602,2.002};
   int i,j,k,n;
-//  double x[12] = {1.2999996, 1.5999997, 1.2559620, 1.5457994, 1.5884249, 1.9850029, 1.9847418, 1.5881638, 1.3, 1.6, 1.2557036, 1.5454813};
-//  double y[12] = {0.001, 0.001, 0.33549873, 0.41292152, 0.20811144, 0.26032196, 0.26230485, 0.21009436, 0.0, 0.0, 0.33646476, 0.41411047};
-  int box[3][4] = { {9, 10, 2, 1}, {3, 4, 12, 11}, {5, 6, 7, 8}};
-  int nx[3] = {15,15,25};
+  int box[6][4] = { {1, 9, 14, 13}, {10, 2, 13, 14}, {11, 3, 15, 16}, {4, 12, 16, 15}, {8, 5, 17, 18},{6, 7, 18, 17}};
+  int nx[6] = {15,15,15,15,25,25};
   int ny = 3;
 
   sprintf(fname,"newmesh.inp");
   read_inp(fname);
+
+  for(i=0;i<npts;i++){
+    printf("%d: %15.8e, %15.8e\n",i,points[i].x,points[i].y);
+  } 
+  printf("\n");
 
   sprintf(fname,"newmesh.rea");
 
@@ -52,13 +56,17 @@ int main(int argc, char *argv[]){
   sprintf(bcs[2][0],"W  ");
   sprintf(bcs[3][0],"W  ");
 
-  for(i=0;i<3;i++){
+  for(i=0;i<6;i++){
     corners[0]=points[box[i][0]-1];
     corners[1]=points[box[i][1]-1];
     corners[2]=points[box[i][2]-1];
     corners[3]=points[box[i][3]-1];
+    for(j=0;j<4;j++){
+      printf("%d: %15.8e, %15.8e\n",j,corners[j].x,corners[j].y);
+    }
+    printf("\n");
 
-    make_quad_space(nx[i],ny,corners,bcs);
+    make_cquad_space(ny,nx[i],rr[i],0.0,0.0,corners,bcs);
   }
 
   write_rea(fname);

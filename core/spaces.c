@@ -240,6 +240,7 @@ int make_cquad_space(int nt,int nr,double R,double dr0,double dt0,point *p,char 
   ta=(double *)malloc(sizeof(double)*(nt+1));
   rb=(double *)malloc(sizeof(double)*(nr+1));
 
+  if(dr0==0.0)dr0=0.5*(distance(p[1],p[2])+distance(p[0],p[3]))/((double)nr);
   *rb=R;
   *(rb+1)=R-dr0;
 

@@ -104,7 +104,7 @@ int read_points(FILE *fp){
     if(i==LIST) read_list(lists[j],&ipt);
     else if(i==MID){
       printf("Generating mid point between points %d and %d\n",(mids+j)->pt1,(mids+j)->pt2);
-      points[ipt]=midpoint(points[(mids+j)->pt1],points[(mids+j)->pt2]);
+      points[ipt]=midpoint(points[(mids+j)->pt1-1],points[(mids+j)->pt2-1]);
       ipt++;
     }
   }}
