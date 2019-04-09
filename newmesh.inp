@@ -1,13 +1,10 @@
 # NekMesh input file
-[points]
-list 12 points.dat  #12 points in file points.dat
-mid 1 2 
-mid 9 10
-mid 3 4  #15
-mid 11 12
-mid 5 6
-mid 7 8  #18
-rotate 10 15.0 1
+[points] #point 0 is ALWAYS the origin
+list 14 points.dat  #points 1-14 in file points.dat
+mid 1 4
+mid 2 3 
+mid 9 12
+mid 10 11
 
 [spaces]
 quad{

@@ -27,13 +27,14 @@ int read_points(FILE *fp){
 
 #define LIST 0
 #define MID 1
-#define ROT 2
+#define LIN 2
+#define ROT 3
 
-#define VOPS 3
+#define VOPS 4
 #define MXTOKL 16
 
   char line[MXLS];
-  char ops[VOPS][MXTOKL]={"list\0","mid\0","rotate\0"};
+  char ops[VOPS][MXTOKL]={"list\0","mid\0","linear\0","rotate\0"};
 //char op[MXTOKL];
   char *lfile[256];
   char *tok[MXTOKL];
@@ -42,15 +43,25 @@ int read_points(FILE *fp){
   double r1;
   
   int i,j,noop,ipt=0,pt1,pt2,pt3;
-  int nops[VOPS]={0,0},iop[VOPS]={0,0};
+  int nops[VOPS],iop[VOPS],tops=0;
+  int *optype;
 
   list *lists;
   mid *mids;
+  lin *lins;
   rot *rots;
 
+  for(i=0;i<VOPS;i++){
+    nops[i]=0;
+    iop[i]=0;
+  }
 // count the valid operations
   printf("Counting point operations...\n");
-  while((fgets(line,MXLS,fp)!=NULL)&&(strcmp(line,"[points]\n")!=0));
+  while((fgets(line,MXLS,fp)!=NULL)&&(noop=strncmp(line,"[points]",8)!=0));
+  if(noop!=0){
+    printf("No point operations found!\n");
+    return 0;
+  }
   while((fgets(line,MXLS,fp)!=NULL)&&(strcmp(line,"\n")!=0)){
     noop=1;
     cpt=strtok(line," ");
@@ -61,6 +72,7 @@ int read_points(FILE *fp){
     }
     for(i=0;i<VOPS;i++){
       if(strncmp(tok[0],ops[i],strlen(ops[i]))==0){
+        tops++;
         nops[i]++;
         noop=0;
         if(i==LIST) {
@@ -73,14 +85,16 @@ int read_points(FILE *fp){
   printf("...Done!\n\n");
 
 // allocate memory
+  optype=malloc(tops*sizeof(int));
   points=malloc(npts*sizeof(point));
   lists =malloc(nops[LIST]*sizeof(list));
   mids  =malloc(nops[MID]*sizeof(mid));
+  lins  =malloc(nops[LIN]*sizeof(lin));
   rots  =malloc(nops[ROT]*sizeof(rot));
 
 // read the operations
-  rewind(fp);
-  while((fgets(line,MXLS,fp)!=NULL)&&(strcmp(line,"[points]\n")!=0));
+  rewind(fp);j=0;
+  while((fgets(line,MXLS,fp)!=NULL)&&(strncmp(line,"[points]",8)!=0));
   while((fgets(line,MXLS,fp)!=NULL)&&(strcmp(line,"\n")!=0)){
     cpt=strtok(line," ");
     i=0;
@@ -90,6 +104,7 @@ int read_points(FILE *fp){
     }
     for(i=0;i<VOPS;i++){
       if(strncmp(tok[0],ops[i],strlen(ops[i]))==0){
+        optype[j++]=i;
         if(i==LIST) {
           (lists+iop[i])->npts=atoi(tok[1]);
           strcpy((lists+iop[i])->fname,tok[2]);
@@ -97,6 +112,11 @@ int read_points(FILE *fp){
         }else if(i==MID){
           (mids+iop[i])->pt1=atoi(tok[1]);
           (mids+iop[i])->pt2=atoi(tok[2]);
+          iop[i]++;
+        }else if(i==LIN){
+          (lins+iop[i])->pt1=atoi(tok[1]);
+          (lins+iop[i])->pt2=atoi(tok[2]);
+          (lins+iop[i])->fra=atof(tok[3]);
           iop[i]++;
         }else if(i==ROT){
           (rots+iop[i])->pt1=atoi(tok[1]);
@@ -108,17 +128,26 @@ int read_points(FILE *fp){
     }   
   } 
 
-// do the operations
+// do the operations IN ORDER!
   printf("Generating point data...\n");
-  for(i=0;i<VOPS;i++){ for(j=0;j<nops[i];j++){switch(i){
+  for(i=0;i<VOPS;i++) iop[i]=0;
+  for(i=0;i<tops;i++){ j=iop[optype[i]]; switch(optype[i]){
     case LIST:
-      read_list(lists[j],&ipt);
+      read_list(lists[iop[LIST]],&ipt);
       break;
     case MID:
       pt1=(mids+j)->pt1;
       pt2=(mids+j)->pt2;
       printf("point %d: Generating mid point between points %d and %d\n",ipt+1,pt1,pt2);
       points[ipt]=midpoint(points[pt1-1],points[pt2-1]);
+      ipt++;
+      break;
+    case LIN:
+      pt1=(lins+j)->pt1;
+      pt2=(lins+j)->pt2;
+      r1=(lins+j)->fra;
+      printf("point %d: Generating point %.2f\% between points %d and %d\n",ipt+1,r1*100.0,pt1,pt2);
+      points[ipt]=linpoint(r1,points[pt1-1],points[pt2-1]);
       ipt++;
       break;
     case ROT:
@@ -136,7 +165,7 @@ int read_points(FILE *fp){
       }
       ipt++;
       break;
-  }}}
+  } iop[optype[i]]++; }
   printf("...Done!\n\n");
 
 return npts;

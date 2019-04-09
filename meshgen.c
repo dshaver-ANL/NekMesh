@@ -23,50 +23,72 @@ point origin={0.0, 0.0};
 
 int main(int argc, char *argv[]){
 
-  char fname[64];
+#define Nbox 4
+
+  char inname[64],reaname[64];
   char bcs[4][2][4];
 
   point corners[4];
 
-  double rr[6]={-1.3,1.6,-1.3,1.6,-1.602,2.002};
+  double rr[Nbox]={-1.3,1.6,-1.602,2.002};
   int i,j,k,n;
-  int box[6][4] = { {1, 9, 14, 13}, {10, 2, 13, 14}, {11, 3, 15, 16}, {4, 12, 16, 15}, {8, 5, 17, 18},{6, 7, 18, 17}};
-  int nx[6] = {15,15,15,15,25,25};
+  int box[Nbox][4] = { {1, 2, 16, 15}, {3, 4, 15, 16}, {10, 9, 17, 18}, {12, 11, 18, 17} };
+  int nx[Nbox] = {15,15,25,25};
   int ny = 3;
+  char bndry[Nbox][4][2][4];
 
-  sprintf(fname,"newmesh.inp");
-  read_inp(fname);
 
-  sprintf(fname,"newmesh.rea");
+  sprintf(bndry[0][0][0],"W  ");
+  sprintf(bndry[0][1][0],"SYM");
+  sprintf(bndry[0][2][0],"E  ");
+  sprintf(bndry[0][3][0],"W  ");
+
+  sprintf(bndry[1][0][0],"E  ");
+  sprintf(bndry[1][1][0],"W  ");
+  sprintf(bndry[1][2][0],"E  ");
+  sprintf(bndry[1][3][0],"SYM");
+
+  sprintf(bndry[2][0][0],"E  ");
+  sprintf(bndry[2][1][0],"W  ");
+  sprintf(bndry[2][2][0],"E  ");
+  sprintf(bndry[2][3][0],"SYM");
+
+  sprintf(bndry[3][0][0],"E  ");
+  sprintf(bndry[3][1][0],"SYM");
+  sprintf(bndry[3][2][0],"E  ");
+  sprintf(bndry[3][3][0],"W  ");
+
+  sprintf(inname,"newmesh.inp");
+  sprintf(reaname,"newmesh.rea");
 
   for(i=1;i<argc;i++){
-    if(strncmp(argv[i],"-f",2)==0){
+    if(strncmp(argv[i],"-fi",3)==0){
       i++;
-      strcpy(fname,argv[i]);
-      strcat(fname,".rea");
+      strcpy(inname,argv[i]);
+    }else if(strncmp(argv[i],"-rea",4)==0){
+      i++;
+      strcpy(reaname,argv[i]);
     }
   }
 
-  sprintf(bcs[0][0],"W  ");
-  sprintf(bcs[1][0],"W  ");
-  sprintf(bcs[2][0],"W  ");
-  sprintf(bcs[3][0],"W  ");
+//read the points from the input file
+  read_inp(inname);
 
-  for(i=0;i<6;i++){
+  for(i=0;i<Nbox;i++){
     corners[0]=points[box[i][0]-1];
     corners[1]=points[box[i][1]-1];
     corners[2]=points[box[i][2]-1];
     corners[3]=points[box[i][3]-1];
 
-    make_cquad_space(ny,nx[i],rr[i],0.0,0.0,corners,bcs);
+    make_cquad_space(ny,nx[i],rr[i],0.0,0.0,corners,bndry[i]);
   }
 
-  write_rea(fname);
+  write_rea(reaname);
     
-//sprintf(fname,"pts.dat");
-//output_pts(points,npts,fname);
-  sprintf(fname,"vts.dat");
-  if(nvert>0) output_pts(verts,nvert,fname);
+  sprintf(reaname,"pts.dat");
+  output_pts(points,npts,reaname);
+  sprintf(reaname,"vts.dat");
+  if(nvert>0) output_pts(verts,nvert,reaname);
 
 return 0;
 }
