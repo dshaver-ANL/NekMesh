@@ -1,0 +1,14 @@
+#! /usr/bin/env bash
+
+echo "Compiling from $1.c"
+gcc $1.c -lm -o nekmesh
+echo ""
+./nekmesh -fi $1.inp -rea $1.rea | tee logfile
+echo ""
+echo "generating re2 file"
+reatore2 << EOF
+$1
+tmp
+EOF
+rm tmp.rea
+mv tmp.re2 $1.re2

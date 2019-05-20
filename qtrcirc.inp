@@ -1,0 +1,7 @@
+#points data file - 0 is always the origin
+[points]
+list 5 qtrcirc.dat
+linear 0 3 0.275
+rotate 2 13.5 0
+rotate 2 45.0 0
+intercept-ll 1 8 6 7

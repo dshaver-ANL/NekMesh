@@ -376,16 +376,15 @@ int make_cquad_space(int nt,int nr,double R,double dr0,double dt0,point *p,char 
 return 0;
 }
 
-int make arc_space(int nt,int nr,double R1,point *p,char bcs[4][2][4]){
+int make_arc_space(int nt,int nr,double R1,point *p,char bcs[4][2][4]){
 
   int i,j,k,nvert0=nvert;
-  double dr,dt,R3,R3a,delta
-  double *ta,*rb;
-  connector r1,r2,r3,r4;
+  double dr,dt,R3,R3a,delta;
+  connector r4;
   point pc;
 
-//      3-----s3-----2
-//      |            |
+//       3-----s3---2
+//      /            \
 //      |            |
 //      s4          s2
 // j,r  |            |
@@ -394,7 +393,7 @@ int make arc_space(int nt,int nr,double R1,point *p,char bcs[4][2][4]){
 //  |
 //  *---->i,t  (r,theta)
 
-  printf("Generating %d elements in a concentric arch space with geometric growth\n",nt*nr);
+  printf("Generating %d elements in a concentric arc space\n",nt*nr);
 
 //  check if sides 1 and 3 are concentric
   pc=circle_center_2pR(p[0],p[1],R1);
@@ -409,19 +408,18 @@ int make arc_space(int nt,int nr,double R1,point *p,char bcs[4][2][4]){
   r4.n=nr+1;
   r4.p=(point *)malloc(sizeof(point)*r4.n);
 
-  dr=0.5*(distance(p[0],p[3])+distance(p[1],p[2]))/((doube)nr);
+  dr=0.5*(distance(p[0],p[3])+distance(p[1],p[2]))/((double)nr);
   delta=distance(p[0],p[1]);
   dt=2.0*asin(delta/(2.0*fabs(R1)))/((double)nt);  
 
-  for(i=0;i<=nr;i++) *(rb+i)=R1-(double)i*dr;
-
 // side 4
-  for(i=0;i<=nr;i++)r4.p[i]=line_circle_intercept(p[0],p[3],pc,*(rb+i));
+  for(i=0;i<=nr;i++)r4.p[i]=line_circle_intercept(p[0],p[3],pc,R1-(double)i*dr);
 
 //vertices
   for(i=0;i<=nt;i++){
-    for(j=1;j<=nr;j++){
-      verts[nvert0+i+j*(nt+1)]=rotate_point(r4.p[j],-R1/fabs(R1)*(double)i*dt,pc);
+    for(j=0;j<=nr;j++){
+      k=nvert0+i+j*(nt+1);
+      verts[nvert0+i+j*(nt+1)]=rotate_point(r4.p[j],R1/fabs(R1)*(double)i*dt,pc);
     }
   }
   nvert+=(nr+1)*(nt+1);
@@ -434,7 +432,7 @@ int make arc_space(int nt,int nr,double R1,point *p,char bcs[4][2][4]){
       (elems+nelem)->vid[2]=(j+1)+(i+1)*(nt+1)+nvert0;
       (elems+nelem)->vid[3]=(j+0)+(i+1)*(nt+1)+nvert0;
       for(k=0;k<nfld;k++){
-        f(i==0){
+        if(i==0){
           strcpy((elems+nelem)->BC[0][k],bcs[0][k]);
           sprintf((elems+nelem)->BC[2][k],"E  ");
         }else if(i==nr-1){
@@ -462,7 +460,7 @@ int make arc_space(int nt,int nr,double R1,point *p,char bcs[4][2][4]){
       ncide++; 
       (cides+ncide)->elid=nelem;
       (cides+ncide)->esid=3;
-      (cides+ncide)->curve=R1-(double)(i+1)*dr; 
+      (cides+ncide)->curve=-R1+(double)(i+1)*dr; 
       (cides+ncide)->ccurve='C';
       ncide++; 
       nelem++;
@@ -470,6 +468,7 @@ int make arc_space(int nt,int nr,double R1,point *p,char bcs[4][2][4]){
   }
 
   free(r4.p);
+  printf("nelem = %d, nvert = %d\n",nelem,nvert);
 
 return 0;
 }

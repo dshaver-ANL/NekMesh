@@ -68,12 +68,12 @@ int write_rea(char *fname){
   }else{
     fprintf(reaout,"%6d Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE\n",ncide);
     if(nelem<1000){for(i=0;i<ncide;i++)
-      fprintf(reaout,"%3d%3d %9.6f %13.5f %13.5f %13.5f %13.5f     %c\n",
+      fprintf(reaout,"%3d%3d%14.6f%14.6g%14.6g%14.6g%14.6g %c\n",
         (cides+i)->esid,(cides+i)->elid+1,(cides+i)->curve,0.0,0.0,0.0,0.0,(cides+i)->ccurve);
-    }else{ for(i=0;i<ncide;i++)
-      fprintf(reaout,"%2d%6d %9.6f %13.5f %13.5f %13.5f %13.5f     %c\n",
+    }else if(nelem<1000000){ for(i=0;i<ncide;i++)
+      fprintf(reaout,"%2d%6d%14.6f%14.6g%14.6g%14.6g%14.6g %c\n",
         (cides+i)->esid,(cides+i)->elid+1,(cides+i)->curve,0.0,0.0,0.0,0.0,(cides+i)->ccurve);
-    }
+    }else printf("Error in output: format for nel > 1e6 not supported!\n");
   }
 
   fprintf(reaout,"  ***** BOUNDARY CONDITIONS *****\n");

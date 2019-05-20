@@ -23,7 +23,7 @@ point origin={0.0, 0.0};
 
 int main(int argc, char *argv[]){
 
-#define Nbox 4
+#define Nbox 7
 
   char inname[64],reaname[64];
   char bcs[4][2][4];
@@ -72,9 +72,21 @@ int main(int argc, char *argv[]){
   }
 
 //read the points from the input file
-  read_inp(inname);
+//read_inp(inname);
 
-  for(i=0;i<Nbox;i++){
+  corners[1].x=1.0;corners[1].y=0.0;
+  corners[2].x=1.3;corners[1].y=0.0;
+  corners[3]=rotate_point(corners[2],15.0*M_PI/180.0,origin);
+  corners[0]=rotate_point(corners[1],15.0*M_PI/180.0,origin);
+
+  sprintf(bndry[0][0][0],"W  ");
+  sprintf(bndry[0][1][0],"W  ");
+  sprintf(bndry[0][2][0],"W  ");
+  sprintf(bndry[0][3][0],"W  ");
+
+  make_arc_space(5,4,-1.0,corners,bndry[0]);
+
+/*for(i=0;i<Nbox;i++){
     corners[0]=points[box[i][0]-1];
     corners[1]=points[box[i][1]-1];
     corners[2]=points[box[i][2]-1];
@@ -82,7 +94,7 @@ int main(int argc, char *argv[]){
 
     make_cquad_space(ny,nx[i],rr[i],0.0,0.0,corners,bndry[i]);
   }
-
+*/
   write_rea(reaname);
     
   sprintf(reaname,"pts.dat");
