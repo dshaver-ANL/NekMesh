@@ -2,7 +2,7 @@
 
 Basically a more flexible genbox
 
-Compile with 'gcc meshgen.c -lm -o NekMesh'
+Run with "NekMesh $casename"
 
-someday I'll make a makefile...
+someday I'll write a proper makefile...
 
