@@ -472,3 +472,21 @@ int make_arc_space(int nt,int nr,double R1,point *p,char bcs[4][2][4]){
 
 return 0;
 }
+int set_4_corners(point *cnr,int c1,int c2,int c3,int c4){
+
+     cnr[0]=points[c1];
+     cnr[1]=points[c2];
+     cnr[2]=points[c3];
+     cnr[3]=points[c4];
+
+return 0;
+}
+int set_4_bcs(char bcs[4][2][4],int ifld,char *b1,char *b2,char *b3,char *b4){
+
+  strncpy(bcs[0][ifld-1],b1,4);
+  strncpy(bcs[1][ifld-1],b2,4);
+  strncpy(bcs[2][ifld-1],b3,4);
+  strncpy(bcs[3][ifld-1],b4,4);
+
+return 0;
+}

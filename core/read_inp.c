@@ -25,20 +25,21 @@ return 0;
 /*----------------------------------------------------*/
 int read_points(FILE *fp){
 
-#define LIST 0
-#define MID 1
-#define LIN 2
-#define ROT 3
-#define LCI 4
-#define LLI 5
-#define REF 6
-#define TRN 7
+#define LIST 0  //read list
+#define MID 1   //midpoint
+#define LIN 2   //linear distance between two points
+#define ROT 3   //rotation
+#define LCI 4   //line-circle intercept
+#define LLI 5   //line-line intercept
+#define REF 6   //reflection
+#define TRN 7   //translation
+#define APT 8   //add point
 
-#define VOPS 8
+#define VOPS 9
 #define MXTOKL 16
 
   char line[MXLS];
-  char ops[VOPS][MXTOKL]={"list\0","mid\0","linear\0","rotate\0","intercept-lc\0","intercept-ll\0","reflect\0","translate\0"};
+  char ops[VOPS][MXTOKL]={"list\0","mid\0","linear\0","rotate\0","intercept-lc\0","intercept-ll\0","reflect\0","translate\0","point\0"};
 //char op[MXTOKL];
   char *lfile[256];
   char *tok[MXTOKL];
@@ -60,6 +61,7 @@ int read_points(FILE *fp){
   lli *llis;
   ref *refs;
   trn *trns;
+  apt *apts;
 
   for(i=0;i<VOPS;i++){
     nops[i]=0;
@@ -106,6 +108,7 @@ int read_points(FILE *fp){
   llis  =malloc(nops[LLI]*sizeof(lli));
   refs  =malloc(nops[REF]*sizeof(ref));
   trns  =malloc(nops[TRN]*sizeof(trn));
+  apts  =malloc(nops[APT]*sizeof(apt));
 
 // read the operations
   rewind(fp);j=0;
@@ -154,6 +157,9 @@ int read_points(FILE *fp){
           (trns+iop[i])->pt1=atoi(tok[1]);
           (trns+iop[i])->dxt=atof(tok[2]);
           (trns+iop[i])->dyt=atof(tok[3]);
+        }else if(i==APT){
+          (apts+iop[i])->xc=atof(tok[1]);
+          (apts+iop[i])->yc=atof(tok[2]);
         }
         iop[i]++;
       }
@@ -161,7 +167,7 @@ int read_points(FILE *fp){
   } 
 
 // do the operations IN ORDER!
-  printf("Generating point data...\n");
+  printf("Creating point data...\n");
   points[0]=origin;ipt++; //origin is always pt 0
   for(i=0;i<VOPS;i++) iop[i]=0;
   for(i=0;i<tops;i++){ j=iop[optype[i]]; switch(optype[i]){
@@ -171,7 +177,7 @@ int read_points(FILE *fp){
     case MID:
       pt1=(mids+j)->pt1;
       pt2=(mids+j)->pt2;
-      printf("point %d: Generating mid point between points %d and %d\n",ipt,pt1,pt2);
+      printf("point %d: Creating mid point between points %d and %d\n",ipt,pt1,pt2);
       points[ipt]=midpoint(points[pt1],points[pt2]);
       ipt++;
       break;
@@ -179,7 +185,7 @@ int read_points(FILE *fp){
       pt1=(lins+j)->pt1;
       pt2=(lins+j)->pt2;
       r1=(lins+j)->fra;
-      printf("point %d: Generating point %.2f\% between points %d and %d\n",ipt,r1*100.0,pt1,pt2);
+      printf("point %d: Creating point %.2f\% between points %d and %d\n",ipt,r1*100.0,pt1,pt2);
       points[ipt]=linpoint(r1,points[pt1],points[pt2]);
       ipt++;
       break;
@@ -197,7 +203,7 @@ int read_points(FILE *fp){
       pt2=(lcis+j)->pt2;
       pt3=(lcis+j)->org;
       r1=(lcis+j)->rad;
-      printf("point %d: Generating point at intercept of the line formed from points %d and %d with a circle centered at point %d with radius %.2f\n",ipt,pt1,pt2,pt3,r1);
+      printf("point %d: Creating point at intercept of the line formed from points %d and %d with a circle centered at point %d with radius %.2f\n",ipt,pt1,pt2,pt3,r1);
       points[ipt]=line_circle_intercept(points[pt1],points[pt2],points[pt3],r1);
       ipt++;
       break;
@@ -206,7 +212,7 @@ int read_points(FILE *fp){
       pt2=(llis+j)->pt2;
       pt3=(llis+j)->pt3;
       pt4=(llis+j)->pt4;
-      printf("point %d: Generating point at intercept of the lines formed from points %d and %d with points %d and %d\n",ipt,pt1,pt2,pt3,pt4);
+      printf("point %d: Creating point at intercept of the lines formed from points %d and %d with points %d and %d\n",ipt,pt1,pt2,pt3,pt4);
       points[ipt]=line_line_intercept(points[pt1],points[pt2],points[pt3],points[pt4]);
       ipt++;
       break;
@@ -225,6 +231,14 @@ int read_points(FILE *fp){
       printf("point %d: Translating point %d by %.2f, %.2f\n",ipt,pt1,r1,r2);
       p1.x=r1;p1.y=r2;
       points[ipt]=translate_point(points[pt1],p1);
+      ipt++;
+      break;
+    case APT:
+      r1=(apts+j)->xc;
+      r2=(apts+j)->yc;
+      printf("point %d: Creating point at %.2f, %.2f\n",ipt,r1,r2);
+      points[ipt].x=r1;
+      points[ipt].y=r2;
       ipt++;
       break;
 

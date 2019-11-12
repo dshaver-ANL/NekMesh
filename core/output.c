@@ -8,6 +8,11 @@ int write_rea(char *fname){
   double dx;
   double xmin=1.0e30,xmax=-1.0e30,ymin=1.0e30,ymax=-1.0e30;
 
+  if(nelem>=1000000){
+    printf("Error: rea printout for 1e6 elements or more NOT supported!\n\tNo rea file produced\n");
+    return -1;
+  }
+
   for(i=0;i<nvert;i++){
     xmax=fmax(xmax,(verts+i)->x);
     xmin=fmin(xmin,(verts+i)->x);
@@ -70,10 +75,10 @@ int write_rea(char *fname){
     if(nelem<1000){for(i=0;i<ncide;i++)
       fprintf(reaout,"%3d%3d%14.6f%14.6g%14.6g%14.6g%14.6g %c\n",
         (cides+i)->esid,(cides+i)->elid+1,(cides+i)->curve,0.0,0.0,0.0,0.0,(cides+i)->ccurve);
-    }else if(nelem<1000000){ for(i=0;i<ncide;i++)
+    }else{ for(i=0;i<ncide;i++)
       fprintf(reaout,"%2d%6d%14.6f%14.6g%14.6g%14.6g%14.6g %c\n",
         (cides+i)->esid,(cides+i)->elid+1,(cides+i)->curve,0.0,0.0,0.0,0.0,(cides+i)->ccurve);
-    }else printf("Error in output: format for nel > 1e6 not supported!\n");
+    }
   }
 
   fprintf(reaout,"  ***** BOUNDARY CONDITIONS *****\n");

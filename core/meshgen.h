@@ -6,7 +6,7 @@ typedef struct { int n; point *p;} connector;
 typedef struct { int elid; int esid; double curve; char ccurve;} edge;
 typedef struct { int vid[4]; char BC[4][2][4];} quad;
 typedef struct { int vid[8];} hex;
-typedef struct { point vert[8]; int btid; int elid[2]; int nbid[8]; char BC[8][2][4];} block;
+typedef struct { point vert[8]; int btid; int elid[2]; int nbid[8]; char BC[6][2][4];} block;
 
 //point generation operations
 typedef struct {char fname[256];int npts;} list;
@@ -17,6 +17,7 @@ typedef struct {int pt1,pt2,org; double rad;} lci;
 typedef struct {int pt1,pt2,pt3,pt4;} lli;
 typedef struct {int pt1,pt2,pt3;} ref;
 typedef struct {int pt1; double dxt,dyt;} trn;
+typedef struct {double xc,yc;} apt;
 
 int make_quad_space(int,int,point*,char[4][2][4]);
 int make_gquad_space(int,int,double,point*,char[4][2][4]);
