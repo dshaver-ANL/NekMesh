@@ -4,7 +4,7 @@ int write_rea(char *fname){
 
   FILE *reain,*reaout;
 
-  int i,j,k,ivert;
+  int i,j,k,ivert,inc=0;
   double dx;
   double xmin=1.0e30,xmax=-1.0e30,ymin=1.0e30,ymax=-1.0e30;
 
@@ -12,6 +12,14 @@ int write_rea(char *fname){
     printf("Error: rea printout for 1e6 elements or more NOT supported!\n\tNo rea file produced\n");
     return -1;
   }
+
+  printf("\n\telement consistency check...\n");
+  for(i=0;i<nelem;i++){
+    if(axi_consistency_check(elems+i)!=0){
+      inc++;
+    }
+  }
+  if(inc>0) printf("\trotated %d elements to align 'A  ' BCs with face 1\n",inc);
 
   for(i=0;i<nvert;i++){
     xmax=fmax(xmax,(verts+i)->x);
@@ -120,6 +128,45 @@ int write_rea(char *fname){
 return 0;
 }
 //-------------------------------------------------------------------
+int axi_consistency_check(quad *elem){
+  int i,j;
+
+  for(i=1;i<4;i++){
+    if(strncmp("A  ",elem->BC[i][0],3)==0){
+//    printf("Error: side %d set to \"A  \"\n",i+1);
+      for(j=i;j>0;j--){
+//      printf("%d %d %d %d\n",elem->vid[0],elem->vid[1],elem->vid[2],elem->vid[3]);
+//      printf("\"%s\" \"%s\" \"%s\" \"%s\"\n",elem->BC[0][0],elem->BC[1][0],elem->BC[2][0],elem->BC[3][0]);
+        rotate_element(elem);
+//      printf("%d %d %d %d\n",elem->vid[0],elem->vid[1],elem->vid[2],elem->vid[3]);
+//      printf("\"%s\" \"%s\" \"%s\" \"%s\"\n\n",elem->BC[0][0],elem->BC[1][0],elem->BC[2][0],elem->BC[3][0]);
+      }   
+      return i;
+    }   
+  }
+
+return 0;
+}
+//-------------------------------------------------------------------
+int rotate_element(quad *elem){
+  char cbuf[2][4];
+  int i,ibuf;
+
+  ibuf=elem->vid[0];
+  strcpy(cbuf[0],elem->BC[0][0]);
+  strcpy(cbuf[1],elem->BC[0][1]);
+  for(i=0;i<3;i++){
+    elem->vid[i]=elem->vid[i+1];
+    strcpy(elem->BC[i][0],elem->BC[i+1][0]);
+    strcpy(elem->BC[i][1],elem->BC[i+1][0]);
+  }
+  elem->vid[3]=ibuf;
+  strcpy(elem->BC[3][0],cbuf[0]);
+  strcpy(elem->BC[3][1],cbuf[1]);
+
+return 0;
+}
+//-------------------------------------------------------------------
 int reset(void){
   printf("\n\treseting mesh generator\n\n");
   nelem = 0;
@@ -134,6 +181,18 @@ int output_pts(point *pts,int npts,char *fnm){
 
   ptout=fopen(fnm,"w");
   for(i=0;i<npts;i++) fprintf(ptout,"%13.7f %13.7f \"%d\"\n",(pts+i)->x,(pts+i)->y,i);
+  fclose(ptout);
+
+  return i;
+}
+//-------------------------------------------------------------------
+int gmsh_pts(point *pts,int npts,char *fnm){
+
+  int i;
+  FILE *ptout;
+
+  ptout=fopen(fnm,"w");
+  for (i=0;i<npts;i++) fprintf(ptout,"Point(%d) = {%f, %f, %f};\n",i+1,(pts+i)->x,(pts+i)->y,0.0);
   fclose(ptout);
 
   return i;

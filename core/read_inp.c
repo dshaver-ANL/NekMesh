@@ -185,7 +185,7 @@ int read_points(FILE *fp){
       pt1=(lins+j)->pt1;
       pt2=(lins+j)->pt2;
       r1=(lins+j)->fra;
-      printf("point %d: Creating point %.2f\% between points %d and %d\n",ipt,r1*100.0,pt1,pt2);
+      printf("point %d: Creating point %.2f%% between points %d and %d\n",ipt,r1*100.0,pt1,pt2);
       points[ipt]=linpoint(r1,points[pt1],points[pt2]);
       ipt++;
       break;
