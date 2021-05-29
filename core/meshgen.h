@@ -29,8 +29,9 @@ int make_tri_space(int,point*,char[4][2][4]);
 
 double distance(point,point);
 double growth_ratio(int,double,double);
-double get_theta_0(point,point,int,double,double,point);
 int get_g_side(point,point,double,connector*);
+int get_g1D(double,double,int,double,double*);
+double get_theta_0(point,point,int,double,double,point);
 point line_circle_intercept(point,point,point,double);
 point line_line_intercept(point,point,point,point);
 point circle_center_2pR(point,point,double);
@@ -44,7 +45,14 @@ int invert(double*,int);
 int invert_connector(connector*);
 
 int write_rea(char*);
+int axi_consistency_check(quad*);
+int rotate_element(quad*);
+int reset(void);
 int output_pts(point*,int,char*);
+
+int read_inp(char*);
+int read_points(FILE*);
+int read_list(list,int*);
 
 int make_vtri_space(int,int,double*,double*);
 int make_ctri_space(int,int,double,double,double*,double*);
