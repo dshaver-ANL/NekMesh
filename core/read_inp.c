@@ -34,12 +34,13 @@ int read_points(FILE *fp){
 #define REF 6   //reflection
 #define TRN 7   //translation
 #define APT 8   //add point
+#define RPT 9   //add point r-theta
 
-#define VOPS 9
+#define VOPS 10
 #define MXTOKL 16
 
   char line[MXLS];
-  char ops[VOPS][MXTOKL]={"list\0","mid\0","linear\0","rotate\0","intercept-lc\0","intercept-ll\0","reflect\0","translate\0","point\0"};
+  char ops[VOPS][MXTOKL]={"list\0","mid\0","linear\0","rotate\0","intercept-lc\0","intercept-ll\0","reflect\0","translate\0","point\0","point-rt\0"};
 //char op[MXTOKL];
   char *lfile[256];
   char *tok[MXTOKL];
@@ -62,6 +63,7 @@ int read_points(FILE *fp){
   ref *refs;
   trn *trns;
   apt *apts;
+  rpt *rpts;
 
   for(i=0;i<VOPS;i++){
     nops[i]=0;
@@ -84,7 +86,7 @@ int read_points(FILE *fp){
       cpt=strtok(NULL," "); 
     }
     for(i=0;i<VOPS;i++){
-      if(strncmp(tok[0],ops[i],strlen(ops[i]))==0){
+      if(strncmp(tok[0],ops[i],max(strlen(tok[0]),strlen(ops[i])))==0){
         tops++;
         nops[i]++;
         noop=0;
@@ -109,6 +111,7 @@ int read_points(FILE *fp){
   refs  =malloc(nops[REF]*sizeof(ref));
   trns  =malloc(nops[TRN]*sizeof(trn));
   apts  =malloc(nops[APT]*sizeof(apt));
+  rpts  =malloc(nops[RPT]*sizeof(rpt));
 
 // read the operations
   rewind(fp);j=0;
@@ -160,6 +163,9 @@ int read_points(FILE *fp){
         }else if(i==APT){
           (apts+iop[i])->xc=atof(tok[1]);
           (apts+iop[i])->yc=atof(tok[2]);
+        }else if(i==RPT){
+          (rpts+iop[i])->rc=atof(tok[1]);
+          (rpts+iop[i])->tc=atof(tok[2]);
         }
         iop[i]++;
       }
@@ -239,6 +245,14 @@ int read_points(FILE *fp){
       printf("point %d: Creating point at %.2f, %.2f\n",ipt,r1,r2);
       points[ipt].x=r1;
       points[ipt].y=r2;
+      ipt++;
+      break;
+    case RPT:
+      r1=(rpts+j)->rc;
+      r2=(rpts+j)->tc;
+      printf("point %d: Creating point at R = %.2f, theta = %.2f\n",ipt,r1,r2);
+      points[ipt].x=r1*cos(r2*M_PI/180.);
+      points[ipt].y=r1*sin(r2*M_PI/180.);
       ipt++;
       break;
 

@@ -18,6 +18,7 @@ typedef struct {int pt1,pt2,pt3,pt4;} lli;
 typedef struct {int pt1,pt2,pt3;} ref;
 typedef struct {int pt1; double dxt,dyt;} trn;
 typedef struct {double xc,yc;} apt;
+typedef struct {double rc,tc;} rpt;
 
 int make_quad_space(int,int,point*,char[4][2][4]);
 int make_gquad_space(int,int,double,point*,char[4][2][4]);
