@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define max(x,y) ((x) > (y) ? (x) : (y))
+
 #define MXLS 512
 /*----------------------------------------------------*/
 int read_inp(char *fname){
@@ -50,7 +52,7 @@ int read_points(FILE *fp){
   
   int i,j,k,noop,ipt=0,pt1,pt2,pt3,pt4;
   int nops[VOPS],iop[VOPS],tops=0;
-  int *optype;
+  int *optype,tlen,olen;
 
   point p1;
 
@@ -85,14 +87,18 @@ int read_points(FILE *fp){
       tok[i++]=cpt;
       cpt=strtok(NULL," "); 
     }
+    tlen=strlen(tok[0]);
     for(i=0;i<VOPS;i++){
-      if(strncmp(tok[0],ops[i],max(strlen(tok[0]),strlen(ops[i])))==0){
+      olen=strlen(ops[i]);
+//    printf("\"%s\", %d, \"%s\", %d\n",tok[0],tlen,ops[i],olen); 
+      if(strncmp(tok[0],ops[i],max(tlen,olen))==0){
         tops++;
         nops[i]++;
         noop=0;
         if(i==LIST) {
           npts+=atoi(tok[1]);
         }else npts++;
+        i=VOPS;
       }
     }
     if(noop) printf("Invalid point operation: \"%s\", ignoring\n",tok[0]);
@@ -123,8 +129,10 @@ int read_points(FILE *fp){
       tok[i++]=cpt;
       cpt=strtok(NULL," "); 
     }
+    tlen=strlen(tok[0]);
     for(i=0;i<VOPS;i++){
-      if(strncmp(tok[0],ops[i],strlen(ops[i]))==0){
+      olen=strlen(ops[i]);
+      if(strncmp(tok[0],ops[i],max(tlen,olen))==0){
         optype[j++]=i;
         if(i==LIST) {
           (lists+iop[i])->npts=atoi(tok[1]);
