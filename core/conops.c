@@ -20,6 +20,68 @@ double growth_ratio(int nx,double delta,double del0){
 return f;
 }
 
+int initialize_con(connector *r,int ne){
+
+  r->n=ne+1;
+  r->p=malloc(sizeof(point)*(r->n));
+
+return 0;
+}
+
+int dealloc_con(connector *r){free(r->p); return 0;}
+
+int set_lin_side(point p1,point p2,connector *r){
+
+  int i;
+  double dx=(p2.x-p1.x)/(double)(r->n-1);
+  double dy=(p2.y-p1.y)/(double)(r->n-1);
+
+  r->p[0]=p1;
+  for(i=1;i<r->n;i++){
+    r->p[i].x=r->p[i-1].x+dx;
+    r->p[i].y=r->p[i-1].y+dy;
+  }
+
+return 0;
+}
+
+int set_geo_side(point p1,point p2,double d0,connector *r){
+
+  int i;
+  double dx=(p2.x-p1.x),dy=(p2.y-p1.y);
+  double delta=sqrt(dx*dx+dy*dy),gr=growth_ratio((r->n)-1,delta,d0),ratio=1.0;
+  double dx0=d0*dx/delta,dy0=d0*dy/delta;
+
+  r->p[0]=p1;
+  for(i=1;i<r->n;i++){
+    r->p[i].x=r->p[i-1].x+dx0*ratio;
+    r->p[i].y=r->p[i-1].y+dy0*ratio;
+    ratio*=gr;
+  }
+
+return 0;
+}
+
+int set_arc_side(point p1,point p2,double R,connector *r){
+
+  int i;
+  point pc=circle_center_2pR(p1,p2,R);
+  double dtheta=angle(pc,p1,p2)/(double)(r->n-1)*R/fabs(R);
+
+  for(i=0;i<r->n;i++) r->p[i]=rotate_point(p1,(double)i*dtheta,pc);
+
+return 0;
+}
+
+int set_garc_side(point p1,point p2,double R,double s0,connector *r){
+
+  int i;
+  point pc=circle_center_2pR(p1,p2,R);
+  double dtheta=angle(pc,p1,p2)/(double)(r->n-1)*R/fabs(R);
+
+return 0;
+}
+
 int get_g_side(point p1,point p2,double d0,connector *r){
 
   int j;

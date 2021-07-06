@@ -1,14 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #define max(x,y) ((x) > (y) ? (x) : (y))
 
 #define MXLS 512
+#define MXTOKL 16
 /*----------------------------------------------------*/
 int read_inp(char *fname){
 
   FILE *inp;
+  var *vars=NULL;
+  int nvars=0;
 
   inp=fopen(fname,"r");
 
@@ -17,15 +21,72 @@ int read_inp(char *fname){
     return -1;
   }
 
-  npts=read_points(inp);
+  read_vars(inp,&vars,&nvars);
+  rewind(inp);
+  npts=read_points(inp,vars,nvars);
 //read_spaces(inp);
 
   fclose(inp);
 
+  printf("Done reading input\n");
+
 return 0;
 }
 /*----------------------------------------------------*/
-int read_points(FILE *fp){
+int read_vars(FILE *fp,var **vars,int *nvars){
+
+  char line[MXLS],*tok[MXTOKL],*cpt;
+  int i,j,novar;
+
+// count the number of defined constants
+  for(i=0;i<MXTOKL;i++) tok[i]=NULL;
+  printf("Counting defined variables...\n"); 
+  while((fgets(line,MXLS,fp)!=NULL)&&(novar=strncmp(line,"[variables]",11)!=0));
+  if(novar!=0){
+    printf("No defined variables found\n");
+    return 0;
+  }
+  while((fgets(line,MXLS,fp)!=NULL)&&(strcmp(line,"\n")!=0)){
+    novar=1;
+    cpt=strtok(line," ");
+    i=0;
+    while((cpt!=NULL)&&(i<MXTOKL)){
+      tok[i++]=cpt; 
+      cpt=strtok(NULL," ");
+    }
+    if(isalpha(*tok[0])&&(isdigit(*tok[1])||(*tok[1]=='-'))){
+      novar=0;
+      (*nvars)++;
+    }
+    if(novar) printf("Invalid variable name: \"%s\", ignoring\n",tok[0]);
+  }
+  printf("...Done!\n\n");
+
+  if(*nvars>0){
+    *vars=malloc(sizeof(var)* *nvars);
+    rewind(fp);
+
+    printf("Reading %d variables...\n",*nvars);
+    while((fgets(line,MXLS,fp)!=NULL)&&(novar=strncmp(line,"[variables]",11)!=0));
+    for(j=0;j<*nvars;j++){
+      fgets(line,MXLS,fp);
+      cpt=strtok(line," ");
+      i=0;
+      while((cpt!=NULL)&&(i<MXTOKL)){
+        tok[i++]=cpt; 
+        cpt=strtok(NULL," ");
+      }
+      strcpy((*vars)[j].name,tok[0]);
+      (*vars)[j].val=atof(tok[1]);
+      printf("\"%s\" = %g\n",(*vars)[j].name,(*vars)[j].val);
+    }
+    printf("\n");
+  }
+
+return 0;
+}
+/*----------------------------------------------------*/
+int read_points(FILE *fp,var *vars,int nvars){
 
 #define LIST 0  //read list
 #define MID 1   //midpoint
@@ -39,18 +100,14 @@ int read_points(FILE *fp){
 #define RPT 9   //add point r-theta
 
 #define VOPS 10
-#define MXTOKL 16
 
-  char line[MXLS];
+  char line[MXLS],*tok[MXTOKL],*cpt;
   char ops[VOPS][MXTOKL]={"list\0","mid\0","linear\0","rotate\0","intercept-lc\0","intercept-ll\0","reflect\0","translate\0","point\0","point-rt\0"};
-//char op[MXTOKL];
   char *lfile[256];
-  char *tok[MXTOKL];
-  char *cpt;
 
   double r1,r2;
   
-  int i,j,k,noop,ipt=0,pt1,pt2,pt3,pt4;
+  int i,j,k,noop=1,ipt=0,pt1,pt2,pt3,pt4;
   int nops[VOPS],iop[VOPS],tops=0;
   int *optype,tlen,olen;
 
@@ -71,6 +128,7 @@ int read_points(FILE *fp){
     nops[i]=0;
     iop[i]=0;
   }
+  for(i=0;i<MXTOKL;i++) tok[i]=NULL;
 // count the valid operations
   printf("Counting point operations...\n");
   while((fgets(line,MXLS,fp)!=NULL)&&(noop=strncmp(line,"[points]",8)!=0));
@@ -80,6 +138,7 @@ int read_points(FILE *fp){
   }
   npts=1; //origin is always pt 0
   while((fgets(line,MXLS,fp)!=NULL)&&(strcmp(line,"\n")!=0)){
+//  printf("line = \"%s\"\n",line);
     noop=1;
     cpt=strtok(line," ");
     i=0;
@@ -90,7 +149,6 @@ int read_points(FILE *fp){
     tlen=strlen(tok[0]);
     for(i=0;i<VOPS;i++){
       olen=strlen(ops[i]);
-//    printf("\"%s\", %d, \"%s\", %d\n",tok[0],tlen,ops[i],olen); 
       if(strncmp(tok[0],ops[i],max(tlen,olen))==0){
         tops++;
         nops[i]++;
@@ -123,6 +181,7 @@ int read_points(FILE *fp){
   rewind(fp);j=0;
   while((fgets(line,MXLS,fp)!=NULL)&&(strncmp(line,"[points]",8)!=0));
   while((fgets(line,MXLS,fp)!=NULL)&&(strcmp(line,"\n")!=0)){
+    sanitize_string(line,MXLS);
     cpt=strtok(line," ");
     i=0;
     while(cpt != NULL){
@@ -145,16 +204,16 @@ int read_points(FILE *fp){
         }else if(i==LIN){
           (lins+iop[i])->pt1=atoi(tok[1]);
           (lins+iop[i])->pt2=atoi(tok[2]);
-          (lins+iop[i])->fra=atof(tok[3]);
+          (lins+iop[i])->fra=get_var(tok[3],vars,nvars);
         }else if(i==ROT){
           (rots+iop[i])->pt1=atoi(tok[1]);
-          (rots+iop[i])->ang=atof(tok[2]);
+          (rots+iop[i])->ang=get_var(tok[2],vars,nvars);
           (rots+iop[i])->org=atoi(tok[3]);
         }else if(i==LCI){
           (lcis+iop[i])->pt1=atoi(tok[1]);
           (lcis+iop[i])->pt2=atoi(tok[2]);
           (lcis+iop[i])->org=atoi(tok[3]);
-          (lcis+iop[i])->rad=atof(tok[4]);
+          (lcis+iop[i])->rad=get_var(tok[4],vars,nvars);
         }else if(i==LLI){
           (llis+iop[i])->pt1=atoi(tok[1]);
           (llis+iop[i])->pt2=atoi(tok[2]);
@@ -166,14 +225,14 @@ int read_points(FILE *fp){
           (refs+iop[i])->pt3=atoi(tok[3]);
         }else if(i==TRN){
           (trns+iop[i])->pt1=atoi(tok[1]);
-          (trns+iop[i])->dxt=atof(tok[2]);
-          (trns+iop[i])->dyt=atof(tok[3]);
+          (trns+iop[i])->dxt=get_var(tok[2],vars,nvars);
+          (trns+iop[i])->dyt=get_var(tok[3],vars,nvars);
         }else if(i==APT){
-          (apts+iop[i])->xc=atof(tok[1]);
-          (apts+iop[i])->yc=atof(tok[2]);
+          (apts+iop[i])->xc=get_var(tok[1],vars,nvars);
+          (apts+iop[i])->yc=get_var(tok[2],vars,nvars);
         }else if(i==RPT){
-          (rpts+iop[i])->rc=atof(tok[1]);
-          (rpts+iop[i])->tc=atof(tok[2]);
+          (rpts+iop[i])->rc=get_var(tok[1],vars,nvars);
+          (rpts+iop[i])->tc=get_var(tok[2],vars,nvars);
         }
         iop[i]++;
       }
@@ -250,7 +309,7 @@ int read_points(FILE *fp){
     case APT:
       r1=(apts+j)->xc;
       r2=(apts+j)->yc;
-      printf("point %d: Creating point at %.2f, %.2f\n",ipt,r1,r2);
+      printf("point %d: Creating point at %.2f, %.2f (x ,y)\n",ipt,r1,r2);
       points[ipt].x=r1;
       points[ipt].y=r2;
       ipt++;
@@ -258,7 +317,7 @@ int read_points(FILE *fp){
     case RPT:
       r1=(rpts+j)->rc;
       r2=(rpts+j)->tc;
-      printf("point %d: Creating point at R = %.2f, theta = %.2f\n",ipt,r1,r2);
+      printf("point %d: Creating point at %.2f, %.2f (r, theta)\n",ipt,r1,r2);
       points[ipt].x=r1*cos(r2*M_PI/180.);
       points[ipt].y=r1*sin(r2*M_PI/180.);
       ipt++;
@@ -298,3 +357,38 @@ int read_list(list l0,int *ipt){
 return 0;
 }
 /*----------------------------------------------------*/
+double get_var(char *tok,var *vars,int nvars){
+
+  int i,tlen,vlen;
+  double val;
+
+  if(*tok=='-'){
+    return -1.0*get_var(&tok[1],vars,nvars);
+  }else{
+    if(isdigit(*tok)){ 
+      return atof(tok);
+    }else{
+      for(i=0;i<nvars;i++){
+        if(strcmp(tok,vars[i].name)==0){
+          return vars[i].val;
+        }
+      }
+    }
+  } 
+
+return 0.0;
+}
+/*----------------------------------------------------*/
+int sanitize_string(char *str,int len){
+
+  int i;
+
+  for(i=0;i<len;i++){
+    if(str[i]=='\n'){
+      str[i]=' ';
+      return i;
+    }
+  }
+
+return 0;
+}

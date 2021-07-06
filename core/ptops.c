@@ -138,3 +138,15 @@ point centroid(point *p,int np){
 
   return pout;
 }
+
+double angle(point pc,point p1,point p2){
+
+  double del1,del2,dot,theta;
+
+  dot=(p1.x-pc.x)*(p2.x-pc.x)+(p1.y-pc.y)*(p2.y-pc.y);
+  del1=distance(p1,pc);
+  del2=distance(p2,pc);
+  theta=acos(dot/(del1*del2));
+
+return theta;
+}

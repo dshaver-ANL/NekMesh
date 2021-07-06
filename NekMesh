@@ -11,7 +11,7 @@ if [ ! -e nekmesh ];then
 fi
 
 echo ""
-./nekmesh -fi $1.inp -rea $1.rea | tee logfile
+./nekmesh -fi $1.inp -rea $1.rea
 echo ""
 echo "generating re2 file"
 reatore2 << EOF
