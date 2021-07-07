@@ -591,21 +591,28 @@ int make_garc_space(int nt,int nr,double R1,int isd,double r0,point *p,char bcs[
     get_g1D(R3,R1,nr,r0,ss); 
     invert(ss,nr+1);
   }else{
-    for(i=0;i<=nr;i++)ss[i]=R1-(double)i*dr;
+    dr=(R3-R1)/(double)(nr);
+    for(i=0;i<=nr;i++)ss[i]=R1+(double)i*dr;
   }
 
   for(i=0;i<=nr;i++)s4.p[i]=line_circle_intercept(p[0],p[3],pc,ss[i]); //side 4
+//for(i=0;i<=nr;i++)printf("s4 %f, %f\n",s4.p[i].x,s4.p[i].y);
   for(i=0;i<=nr;i++)s2.p[i]=line_circle_intercept(p[1],p[2],pc,ss[i]); //side 2
+//for(i=0;i<=nr;i++)printf("s2 %f, %f\n",s2.p[i].x,s2.p[i].y);
 
 //vertices
   for(j=0;j<=nr;j++){
     if(isd==2){
-      t0=get_theta_0(s2.p[j],p[2],1,r0,ss[i],pc)
+      t0=get_theta_0(s2.p[j],p[2],1,-r0,ss[i],pc);
+//    t0=0.005;
+      printf("t0 = %f\n",t0);
       set_garc_side(s2.p[j],s4.p[j],pc,t0,&rr);
       invert_connector(&rr);
     }else if(isd==4){
-      t0=get_theta_0(s4.p[j],p[3],0,r0,ss[i],pc)
-      set_garc_side(s4.p[j],s2.p[j],0,pc,t0,&rr);
+      t0=get_theta_0(s4.p[j],p[3],0,r0,ss[i],pc);
+      t0=0.005;
+      printf("t0 = %f\n",t0);
+      set_garc_side(s4.p[j],s2.p[j],pc,t0,&rr);
     }else{
       set_arc_side(s4.p[j],s2.p[j],ss[j],&rr);
     }
@@ -653,7 +660,7 @@ dealloc_con(&rr);
       ncide++; 
       (cides+ncide)->elid=nelem;
       (cides+ncide)->esid=3;
-      (cides+ncide)->curve=-ss[i]; 
+      (cides+ncide)->curve=-ss[i+1]; 
       (cides+ncide)->ccurve='C';
       ncide++; 
       nelem++;

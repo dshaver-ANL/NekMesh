@@ -150,3 +150,15 @@ double angle(point pc,point p1,point p2){
 
 return theta;
 }
+
+double crossprod2d(point pc,point p1,point p2){
+
+  point v1,v2;
+
+  v1.x=p1.x-pc.x;
+  v1.y=p1.y-pc.y;
+  v2.x=p2.x-pc.x;
+  v2.y=p2.y-pc.y;
+
+  return v1.x*v2.y-v1.y*v2.x;
+}

@@ -73,11 +73,23 @@ int set_arc_side(point p1,point p2,double R,connector *r){
 return 0;
 }
 
-int set_garc_side(point p1,point p2,double R,double s0,connector *r){
+int set_garc_side(point p1,point p2,point pc,double s0,connector *r){
 
   int i;
-  point pc=circle_center_2pR(p1,p2,R);
-  double dtheta=angle(pc,p1,p2)/(double)(r->n-1)*R/fabs(R);
+  double *th,sgn;
+  double R=distance(p1,pc);
+  double theta=angle(pc,p1,p2);
+
+  sgn=crossprod2d(pc,p1,p2);
+  sgn=sgn/fabs(sgn);
+
+//printf("%f, %f, %f\n",sgn,theta*180./M_PI,R);
+
+  th=malloc(sizeof(double)* r->n);
+  get_g1D(0.0,theta,r->n-1,s0,th);
+//for(i=0;i<r->n;i++)printf("th %f\n",th[i]*180./M_PI);
+  for(i=0;i<r->n;i++)r->p[i]=rotate_point(p1,th[i]*sgn,pc);
+  free(th);
 
 return 0;
 }
