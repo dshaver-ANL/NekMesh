@@ -123,18 +123,21 @@ int get_g1D(double x1,double x2,int n,double d0,double *r){
 return n;
 }
 
-double get_theta_0(point p0,point p1,int icor,double dt0,double R,point pc){
+double get_theta_0(point p0,point p1,int icor,double dt0,point pc){
   double cp,del,fact;
   point p2,p3,p4;
 
-  double m=(p1.y-p0.y)/(p1.x-p0.x);
+  double denom=p1.x-p0.x;
+  double m=(p1.y-p0.y)/fmax(denom,1.e-10);
   double B1=p0.y-m*p0.x;
-  double B2=B1+dt0*sqrt(1+m*m);
-  if(fabs(p1.x-p0.x)<1.0e-10){
+  double B2=B1+dt0*sqrt(1.0+m*m);
+  double R=distance(p0,pc);
+//printf("%f, %f, %f, %f\n",denom,m,B1,B2);
+  if(fabs(denom)<1.0e-10){
     p3.x=p0.x-dt0;
     p3.y=p0.y;
     p4.x=p1.x-dt0;
-    p4.y=p0.y;
+    p4.y=p1.y;
   }else if(fabs(m)>1){ 
     p3.y=p0.y;
     p3.x=(p3.y-B2)/m;
@@ -146,15 +149,16 @@ double get_theta_0(point p0,point p1,int icor,double dt0,double R,point pc){
     p4.x=p1.x;
     p4.y=m*p4.x+B2;
   }
+//printf("%f p3: %f, %f  p4: %f, %f  pc: %f, %f\n",R,p3.x,p3.y,p4.x,p4.y,pc.x,pc.y);
   p2=line_circle_intercept(p3,p4,pc,R);
 
-  cp=(p1.x-p0.x)*(p2.y-p0.y)-(p2.x-p0.x)*(p1.y-p0.y);
+  cp=crossprod2d(p0,p1,p2);
   if(((cp>0.0)&&(icor==1))||((cp<0.0)&&(icor==0))){
-    del=sqrt((p2.x-p0.x)*(p2.x-p0.x)+(p2.y-p0.y)*(p2.y-p0.y));
+    del=distance(p2,p0);
     return 2.0*asin(del/(2.0*fabs(R)));
   }
   B2=B1-dt0*sqrt(1+m*m);
-  if(fabs(p1.x-p0.x)<1.0e-10){
+  if(fabs(denom)<1.0e-10){
     p3.x=p0.x+dt0;
     p3.y=p0.y;
     p4.x=p1.x+dt0;
@@ -171,7 +175,7 @@ double get_theta_0(point p0,point p1,int icor,double dt0,double R,point pc){
     p4.y=m*p4.x+B2;
   }
   p2=line_circle_intercept(p3,p4,pc,R);
-  del=sqrt((p2.x-p0.x)*(p2.x-p0.x)+(p2.y-p0.y)*(p2.y-p0.y));
+  del=distance(p2,p0);
   return 2.0*asin(del/(2.0*fabs(R)));
 }
 

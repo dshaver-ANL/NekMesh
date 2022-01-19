@@ -26,8 +26,11 @@ int make_cquad_space(int,int,double,point*,char[4][2][4]);
 int make_gquad_space(int,int,double,point*,char[4][2][4]);
 int make_g2quad_space(int,int,double,double,point*,char[4][2][4]);
 int make_cgquad_space(int,int,double,double,double,point*,char[4][2][4]);
+int make_arc_space(int,int,double,point*,char[4][2][4]);
+int make_garc_space(int,int,double,int,double,point*,char[4][2][4]);
 
 int make_tri_space(int,point*,char[4][2][4]);
+int make_ctri_space(int,int,double,point*,char[4][2][4]);
 
 double distance(point,point);
 double angle(point,point,point);
@@ -36,10 +39,11 @@ int initialize_con(connector*,int);
 int dealloc_con(connector*);
 int set_lin_side(point,point,connector*);
 int set_arc_side(point,point,double,connector*);
+int set_garc_side(point,point,point,double,connector*);
 int set_geo_side(point,point,double,connector*);
 int get_g_side(point,point,double,connector*);
 int get_g1D(double,double,int,double,double*);
-double get_theta_0(point,point,int,double,double,point);
+double get_theta_0(point,point,int,double,point);
 point line_circle_intercept(point,point,point,double);
 point line_line_intercept(point,point,point,point);
 point circle_center_2pR(point,point,double);
@@ -49,6 +53,7 @@ point translate_point(point,point);
 point midpoint(point,point);
 point linpoint(double,point,point);
 point centroid(point*,int);
+point set_point(double,double);
 int invert(double*,int);
 int invert_connector(connector*);
 
@@ -66,4 +71,3 @@ double get_var(char*,var*,int);
 int sanitize_string(char*,int);
 
 int make_vtri_space(int,int,double*,double*);
-int make_ctri_space(int,int,double,double,double*,double*);

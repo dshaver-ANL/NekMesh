@@ -162,3 +162,19 @@ double crossprod2d(point pc,point p1,point p2){
 
   return v1.x*v2.y-v1.y*v2.x;
 }
+int rotate_all(double theta,point pc){
+
+  int i;point pttmp;
+  for(i=0;i<nvert;i++){
+    pttmp=rotate_point(verts[i],theta,pc);
+    verts[i]=pttmp;
+  }
+
+}
+point set_point(double xin,double yin){
+  point pout; 
+  pout.x=xin;
+  pout.y=yin;
+
+  return pout;
+}

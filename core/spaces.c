@@ -36,7 +36,10 @@ int make_quad_space(int nr,int ns,point *p,char bcs[4][2][4]){
       (elems+nelem)->vid[2]=(i+1)+(j+1)*(nr+1)+nvert0;
       (elems+nelem)->vid[3]=(i+0)+(j+1)*(nr+1)+nvert0;
       for(k=0;k<nfld;k++){
-        if(i==0){
+        if(nr==1){
+          strcpy((elems+nelem)->BC[1][k],bcs[1][k]);
+          strcpy((elems+nelem)->BC[3][k],bcs[3][k]);
+        }else if(i==0){
           strcpy((elems+nelem)->BC[3][k],bcs[3][k]);
           sprintf((elems+nelem)->BC[1][k],"E  ");
         }else if(i==nr-1){
@@ -46,7 +49,10 @@ int make_quad_space(int nr,int ns,point *p,char bcs[4][2][4]){
           sprintf((elems+nelem)->BC[1][k],"E  ");
           sprintf((elems+nelem)->BC[3][k],"E  ");
         }
-        if(j==0){
+        if(ns==1){
+          strcpy((elems+nelem)->BC[0][k],bcs[0][k]);
+          strcpy((elems+nelem)->BC[2][k],bcs[2][k]);
+        }else if(j==0){
           strcpy((elems+nelem)->BC[0][k],bcs[0][k]);
           sprintf((elems+nelem)->BC[2][k],"E  ");
         }else if(j==ns-1){
@@ -114,7 +120,10 @@ int make_cquad_space(int nt,int nr,double R1,point *p,char bcs[4][2][4]){
       (elems+nelem)->vid[2]=(j+1)+(i+1)*(nt+1)+nvert0;
       (elems+nelem)->vid[3]=(j+0)+(i+1)*(nt+1)+nvert0;
       for(k=0;k<nfld;k++){
-        if(i==0){
+        if(nr==1){
+          strcpy((elems+nelem)->BC[0][k],bcs[0][k]);
+          strcpy((elems+nelem)->BC[2][k],bcs[2][k]);
+        }else if(i==0){
           strcpy((elems+nelem)->BC[0][k],bcs[0][k]);
           sprintf((elems+nelem)->BC[2][k],"E  ");
         }else if(i==nr-1){
@@ -124,7 +133,10 @@ int make_cquad_space(int nt,int nr,double R1,point *p,char bcs[4][2][4]){
           sprintf((elems+nelem)->BC[0][k],"E  ");
           sprintf((elems+nelem)->BC[2][k],"E  ");
         }
-        if(j==0){ //j is build from side 4 [3][k] to 2 [1][k]
+        if(nt==1){
+          strcpy((elems+nelem)->BC[1][k],bcs[1][k]);
+          strcpy((elems+nelem)->BC[3][k],bcs[3][k]);
+        }else if(j==0){ //j is build from side 4 [3][k] to 2 [1][k]
           strcpy((elems+nelem)->BC[3][k],bcs[3][k]);
           sprintf((elems+nelem)->BC[1][k],"E  ");
         }else if(j==nt-1){
@@ -196,7 +208,10 @@ int make_gquad_space(int nr,int ns,double dn0,point *p,char bcs[4][2][4]){
       (elems+nelem)->vid[2]=(i+1)+(j+1)*(nr+1)+nvert0;
       (elems+nelem)->vid[3]=(i+0)+(j+1)*(nr+1)+nvert0;
       for(k=0;k<nfld;k++){
-        if(i==0){
+        if(nr==1){
+          strcpy((elems+nelem)->BC[1][k],bcs[1][k]);
+          strcpy((elems+nelem)->BC[3][k],bcs[3][k]);
+        }else if(i==0){
           strcpy((elems+nelem)->BC[3][k],bcs[3][k]);
           sprintf((elems+nelem)->BC[1][k],"E  ");
         }else if(i==nr-1){
@@ -206,7 +221,10 @@ int make_gquad_space(int nr,int ns,double dn0,point *p,char bcs[4][2][4]){
           sprintf((elems+nelem)->BC[1][k],"E  ");
           sprintf((elems+nelem)->BC[3][k],"E  ");
         }
-        if(j==0){
+        if(ns==1){
+          strcpy((elems+nelem)->BC[0][k],bcs[0][k]);
+          strcpy((elems+nelem)->BC[2][k],bcs[2][k]);
+        }else if(j==0){
           strcpy((elems+nelem)->BC[0][k],bcs[0][k]);
           sprintf((elems+nelem)->BC[2][k],"E  ");
         }else if(j==ns-1){
@@ -265,7 +283,10 @@ int make_g2quad_space(int nr,int ns,double dr0,double ds0,point *p,char bcs[4][2
       (elems+nelem)->vid[2]=(i+1)+(j+1)*(nr+1)+nvert0;
       (elems+nelem)->vid[3]=(i+0)+(j+1)*(nr+1)+nvert0;
       for(k=0;k<nfld;k++){
-        if(i==0){
+        if(nr==1){
+          strcpy((elems+nelem)->BC[1][k],bcs[1][k]);
+          strcpy((elems+nelem)->BC[3][k],bcs[3][k]);
+        }else if(i==0){
           strcpy((elems+nelem)->BC[3][k],bcs[3][k]);
           sprintf((elems+nelem)->BC[1][k],"E  ");
         }else if(i==nr-1){
@@ -275,7 +296,10 @@ int make_g2quad_space(int nr,int ns,double dr0,double ds0,point *p,char bcs[4][2
           sprintf((elems+nelem)->BC[1][k],"E  ");
           sprintf((elems+nelem)->BC[3][k],"E  ");
         }
-        if(j==0){
+        if(ns==1){
+          strcpy((elems+nelem)->BC[0][k],bcs[0][k]);
+          strcpy((elems+nelem)->BC[2][k],bcs[2][k]);
+        }else if(j==0){
           strcpy((elems+nelem)->BC[0][k],bcs[0][k]);
           sprintf((elems+nelem)->BC[2][k],"E  ");
         }else if(j==ns-1){
@@ -359,11 +383,11 @@ int make_cgquad_space(int nt,int nr,double R,double dr0,double dt0,point *p,char
 //side 3 (3-2), theta1a, theta1b
   if(dt0>0.0){ //geometric growth from side 4
     get_g_side(p[3],p[2],dt0,&r3);
-    thet0=get_theta_0(r4.p[0],p[3],0,dt0,R,pc);
+    thet0=get_theta_0(r4.p[0],p[3],0,dt0,pc);
     get_g1D(0.0,-theta,nt,thet0,ta);
   }else if(dt0<0.0){ //geometric growth from side 2
     get_g_side(p[2],p[3],-dt0,&r3);
-    thet0=get_theta_0(r2.p[0],p[2],1,-dt0,R,pc);
+    thet0=get_theta_0(r2.p[0],p[2],1,-dt0,pc);
     get_g1D(0.0,-theta,nt,thet0,ta);
     //re-orient from side 4
     invert_connector(&r3);
@@ -398,7 +422,10 @@ int make_cgquad_space(int nt,int nr,double R,double dr0,double dt0,point *p,char
       (elems+nelem)->vid[2]=(j+1)+(i+1)*(nt+1)+nvert0;
       (elems+nelem)->vid[3]=(j+0)+(i+1)*(nt+1)+nvert0;
       for(k=0;k<nfld;k++){
-        if(i==0){
+        if(nr==1){
+          strcpy((elems+nelem)->BC[0][k],bcs[0][k]);
+          strcpy((elems+nelem)->BC[2][k],bcs[2][k]);
+        }else if(i==0){
           strcpy((elems+nelem)->BC[0][k],bcs[0][k]);
           sprintf((elems+nelem)->BC[2][k],"E  ");
         }else if(i==nr-1){
@@ -408,7 +435,10 @@ int make_cgquad_space(int nt,int nr,double R,double dr0,double dt0,point *p,char
           sprintf((elems+nelem)->BC[0][k],"E  ");
           sprintf((elems+nelem)->BC[2][k],"E  ");
         }
-        if(j==0){ //j is build from side 4 [3][k] to 2 [1][k]
+        if(nt==1){
+          strcpy((elems+nelem)->BC[1][k],bcs[1][k]);
+          strcpy((elems+nelem)->BC[3][k],bcs[3][k]);
+        }else if(j==0){
           strcpy((elems+nelem)->BC[3][k],bcs[3][k]);
           sprintf((elems+nelem)->BC[1][k],"E  ");
         }else if(j==nt-1){
@@ -509,7 +539,10 @@ int make_arc_space(int nt,int nr,double R1,point *p,char bcs[4][2][4]){
       (elems+nelem)->vid[2]=(j+1)+(i+1)*(nt+1)+nvert0;
       (elems+nelem)->vid[3]=(j+0)+(i+1)*(nt+1)+nvert0;
       for(k=0;k<nfld;k++){
-        if(i==0){
+        if(nr==1){
+          strcpy((elems+nelem)->BC[0][k],bcs[0][k]);
+          strcpy((elems+nelem)->BC[2][k],bcs[2][k]);
+        }else if(i==0){
           strcpy((elems+nelem)->BC[0][k],bcs[0][k]);
           sprintf((elems+nelem)->BC[2][k],"E  ");
         }else if(i==nr-1){
@@ -519,7 +552,10 @@ int make_arc_space(int nt,int nr,double R1,point *p,char bcs[4][2][4]){
           sprintf((elems+nelem)->BC[0][k],"E  ");
           sprintf((elems+nelem)->BC[2][k],"E  ");
         }
-        if(j==0){ //j is build from side 4 [3][k] to 2 [1][k]
+        if(nt==1){
+          strcpy((elems+nelem)->BC[1][k],bcs[1][k]);
+          strcpy((elems+nelem)->BC[3][k],bcs[3][k]);
+        }else if(j==0){
           strcpy((elems+nelem)->BC[3][k],bcs[3][k]);
           sprintf((elems+nelem)->BC[1][k],"E  ");
         }else if(j==nt-1){
@@ -554,7 +590,7 @@ int make_garc_space(int nt,int nr,double R1,int isd,double r0,point *p,char bcs[
   int i,j,k,nvert0=nvert;
   double dr,R3,R3a,*ss,t0;
   connector s4,s2,rr;
-  point pc;
+  point pc,p2a,p3a;
 
 //   geometric growth from side isd
 //       3-----s3---2
@@ -579,15 +615,18 @@ int make_garc_space(int nt,int nr,double R1,int isd,double r0,point *p,char bcs[
     return -1;
   }
 
+  p2a=linpoint(1.05,p[1],p[2]);
+  p3a=linpoint(1.05,p[0],p[3]);
+
   initialize_con(&s4,nr);
   initialize_con(&s2,nr);
   initialize_con(&rr,nt);
   ss=malloc(sizeof(double)*(nr+1));
 
   R3*=R1/fabs(R1);
-  if(isd==1){
+  if(isd==1||isd==5||isd==6){
     get_g1D(R1,R3,nr,r0,ss);
-  }else if(isd==3){ 
+  }else if(isd==3||isd==7||isd==8){ 
     get_g1D(R3,R1,nr,r0,ss); 
     invert(ss,nr+1);
   }else{
@@ -602,16 +641,14 @@ int make_garc_space(int nt,int nr,double R1,int isd,double r0,point *p,char bcs[
 
 //vertices
   for(j=0;j<=nr;j++){
-    if(isd==2){
-      t0=get_theta_0(s2.p[j],p[2],1,-r0,ss[i],pc);
-//    t0=0.005;
-      printf("t0 = %f\n",t0);
+    if(isd==2||isd==5||isd==7){
+      t0=get_theta_0(s2.p[j],p2a,1,r0,pc);
+//    printf("t0 = %f\n",t0);
       set_garc_side(s2.p[j],s4.p[j],pc,t0,&rr);
       invert_connector(&rr);
-    }else if(isd==4){
-      t0=get_theta_0(s4.p[j],p[3],0,r0,ss[i],pc);
-      t0=0.005;
-      printf("t0 = %f\n",t0);
+    }else if(isd==4||isd==6||isd==8){
+      t0=get_theta_0(s4.p[j],p3a,0,r0,pc);
+//    printf("t0 = %f\n",t0);
       set_garc_side(s4.p[j],s2.p[j],pc,t0,&rr);
     }else{
       set_arc_side(s4.p[j],s2.p[j],ss[j],&rr);
@@ -632,7 +669,10 @@ dealloc_con(&rr);
       (elems+nelem)->vid[2]=(j+1)+(i+1)*(nt+1)+nvert0;
       (elems+nelem)->vid[3]=(j+0)+(i+1)*(nt+1)+nvert0;
       for(k=0;k<nfld;k++){
-        if(i==0){
+        if(nr==1){
+          strcpy((elems+nelem)->BC[0][k],bcs[0][k]);
+          strcpy((elems+nelem)->BC[2][k],bcs[2][k]);
+        }else if(i==0){
           strcpy((elems+nelem)->BC[0][k],bcs[0][k]);
           sprintf((elems+nelem)->BC[2][k],"E  ");
         }else if(i==nr-1){
@@ -642,7 +682,10 @@ dealloc_con(&rr);
           sprintf((elems+nelem)->BC[0][k],"E  ");
           sprintf((elems+nelem)->BC[2][k],"E  ");
         }
-        if(j==0){ //j is build from side 4 [3][k] to 2 [1][k]
+        if(nt==1){
+          strcpy((elems+nelem)->BC[1][k],bcs[1][k]);
+          strcpy((elems+nelem)->BC[3][k],bcs[3][k]);
+        }else if(j==0){
           strcpy((elems+nelem)->BC[3][k],bcs[3][k]);
           sprintf((elems+nelem)->BC[1][k],"E  ");
         }else if(j==nt-1){
