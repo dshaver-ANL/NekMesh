@@ -8,32 +8,22 @@ someday I'll write a proper makefile...
 
 ## Valid point operations
 
-###list 
-filename containing coordinates
+`list` - filename containing coordinates
 
-###mid
-midpoint between two points
+`mid` - midpoint between two points
 
-###linear
-fractional distance between (or beyond) two points
+`linear` - fractional distance between (or beyond) two points
 
-###rotate
-rotate one point around another
+`rotate` - rotate one point around another
 
-###intercept-lc
-intercept between a line and a circle
+`intercept-lc` - intercept between a line and a circle
 
-###intercept-ll
-interceptt between two lines
+`intercept-ll` - interceptt between two lines
 
-###reflect
-reflect a point over a line
+`reflect` - reflect a point over a line
 
-###translate
-simple translation
+`translate` - simple translation
 
-###point
-point defined by x, y, z
+`point` - point defined by x, y, z
 
-###point-rt
-point defined by r, theta
+`point-rt` - point defined by r, theta
